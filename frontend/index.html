@@ -11,103 +11,168 @@
     <div class="bg-shape bg-shape-bottom"></div>
 
     <main class="app-shell">
-      <section class="surface planner-surface">
-        <header class="hero">
+      <header class="surface topbar">
+        <div class="brand">
           <p class="eyebrow">StudyTrail Planner</p>
-          <button type="button" id="planner-taskbar-toggle" class="taskbar-toggle">Minimize to Side</button>
-          <h1>Design your best week of study</h1>
-          <p class="hero-copy">
-            AI-style planning with deadline awareness, balanced workload, and built-in review cycles.
+          <h1>Personalized Study Workspace</h1>
+        </div>
+        <nav class="menu-nav" aria-label="Main navigation">
+          <button type="button" id="nav-home" class="menu-btn active">Home</button>
+          <button type="button" id="nav-planner" class="menu-btn">Create Plan</button>
+          <button type="button" id="nav-output" class="menu-btn" disabled>Plan Output</button>
+        </nav>
+      </header>
+
+      <section id="view-home" class="view active">
+        <section class="surface home-hero">
+          <h2>Welcome to your study dashboard</h2>
+          <p>
+            Build a plan, track your week, and jump between planning and results instantly from the top menu.
           </p>
-        </header>
-
-        <form id="planner-form" class="planner-form">
-          <div class="form-row two-col">
-            <label class="input-block">Week Start Date
-              <input type="date" id="week_start_date" required />
-            </label>
-
-            <label class="input-block">Preferred Study Style
-              <select id="study_style">
-                <option value="balanced">Balanced</option>
-                <option value="more_practice">More Practice</option>
-                <option value="more_theory">More Theory</option>
-              </select>
-            </label>
+          <div class="hero-actions">
+            <button type="button" id="go-create" class="primary">Create Weekly Plan</button>
+            <button type="button" id="go-output" class="ghost" disabled>View Latest Output</button>
           </div>
+        </section>
 
-          <fieldset class="input-group">
-            <legend>Daily Available Hours</legend>
-            <div class="daily-grid" id="daily-hours-grid"></div>
-          </fieldset>
+        <section class="home-grid">
+          <article class="surface widget">
+            <p class="widget-title">Total Planned Minutes</p>
+            <strong id="widget-total">0 min</strong>
+          </article>
+          <article class="surface widget">
+            <p class="widget-title">Review Sessions</p>
+            <strong id="widget-reviews">0</strong>
+          </article>
+          <article class="surface widget">
+            <p class="widget-title">Session Blocks</p>
+            <strong id="widget-sessions">0</strong>
+          </article>
+          <article class="surface widget">
+            <p class="widget-title">Current Planned Week</p>
+            <strong id="widget-week">None</strong>
+          </article>
+        </section>
 
-          <div class="form-row two-col">
-            <label class="input-block">Subjects
-              <textarea
-                id="subjects"
-                rows="5"
-                placeholder="Algorithms:5&#10;Databases:4&#10;Operating Systems:3"
-                required
-              ></textarea>
-              <span class="input-hint">Format: Subject:Importance (1-5), one per line</span>
-            </label>
-
-            <fieldset class="input-group task-editor">
-              <legend>Tasks</legend>
-              <div class="task-editor-head">
-                <p>Organized task rows</p>
-                <button type="button" id="add-task" class="ghost small">+ Add Task</button>
-              </div>
-              <div id="task-list" class="task-list"></div>
-            </fieldset>
+        <section class="surface home-preview">
+          <header>
+            <p class="eyebrow">Snapshot</p>
+            <h3>Latest plan highlights</h3>
+          </header>
+          <div id="home-preview-list" class="home-preview-list">
+            <p class="muted-empty">Generate your first plan to see quick highlights here.</p>
           </div>
-
-          <div class="form-row">
-            <label class="input-block">Max Session Minutes
-              <input type="number" id="max_session_minutes" value="90" min="30" max="180" step="15" required />
-            </label>
-          </div>
-
-          <div class="actions">
-            <button type="button" id="fill-demo" class="ghost">Load Demo Data</button>
-            <button type="submit" class="primary">Generate Weekly Plan</button>
-          </div>
-        </form>
+        </section>
       </section>
 
-      <section class="surface schedule-surface">
-        <header class="schedule-header">
-          <div>
-            <p class="eyebrow">Plan Output</p>
-            <h2>Weekly Schedule</h2>
-          </div>
-          <button type="button" id="output-close" class="ghost small output-close">Close</button>
-          <div class="summary-pills">
-            <div class="pill">
-              <span>Total</span>
-              <strong id="summary-total">0 min</strong>
-            </div>
-            <div class="pill">
-              <span>Reviews</span>
-              <strong id="summary-reviews">0</strong>
-            </div>
-          </div>
-        </header>
+      <section id="view-planner" class="view">
+        <section class="surface planner-surface">
+          <header class="hero">
+            <p class="eyebrow">StudyTrail Planner</p>
+            <h2>Design your best week of study</h2>
+            <p class="hero-copy">
+              AI-style planning with deadline awareness, balanced workload, and built-in review cycles.
+            </p>
+          </header>
 
-        <p id="status" class="status">Fill the form and generate your plan.</p>
-        <div class="mini-calendar" id="mini-calendar">
-          <div class="mini-calendar-head">
-            <p id="mini-calendar-month">Month</p>
-            <div class="mini-calendar-nav">
-              <button type="button" id="week-prev" class="mini-nav-btn" aria-label="Previous week">&#8249;</button>
-              <button type="button" id="week-next" class="mini-nav-btn" aria-label="Next week">&#8250;</button>
+          <form id="planner-form" class="planner-form">
+            <div class="form-row two-col">
+              <label class="input-block">Week Start Date
+                <input type="date" id="week_start_date" required />
+              </label>
+
+              <label class="input-block">Preferred Study Style
+                <select id="study_style">
+                  <option value="balanced">Balanced</option>
+                  <option value="more_practice">More Practice</option>
+                  <option value="more_theory">More Theory</option>
+                </select>
+              </label>
             </div>
+
+            <fieldset class="input-group">
+              <legend>Daily Available Hours</legend>
+              <div class="daily-grid" id="daily-hours-grid"></div>
+            </fieldset>
+
+            <div class="form-row two-col">
+              <label class="input-block">Subjects
+                <textarea
+                  id="subjects"
+                  rows="5"
+                  placeholder="Algorithms:5&#10;Databases:4&#10;Operating Systems:3"
+                  required
+                ></textarea>
+                <span class="input-hint">Format: Subject:Importance (1-5), one per line</span>
+              </label>
+
+              <fieldset class="input-group task-editor">
+                <legend>Tasks</legend>
+                <div class="task-editor-head">
+                  <p>Organized rows with one task per line item</p>
+                  <button type="button" id="add-task" class="ghost small">+ Add Task</button>
+                </div>
+                <div class="task-columns" aria-hidden="true">
+                  <span>Subject</span>
+                  <span>Title</span>
+                  <span>Due</span>
+                  <span>Min</span>
+                  <span>Type</span>
+                  <span>Topic</span>
+                  <span></span>
+                </div>
+                <div id="task-list" class="task-list"></div>
+              </fieldset>
+            </div>
+
+            <div class="form-row">
+              <label class="input-block">Max Session Minutes
+                <input type="number" id="max_session_minutes" value="90" min="30" max="180" step="15" required />
+              </label>
+            </div>
+
+            <div class="actions">
+              <button type="button" id="fill-demo" class="ghost">Load Demo Data</button>
+              <button type="submit" class="primary">Generate Weekly Plan</button>
+            </div>
+          </form>
+        </section>
+      </section>
+
+      <section id="view-output" class="view">
+        <section class="surface schedule-surface">
+          <header class="schedule-header">
+            <div>
+              <p class="eyebrow">Plan Output</p>
+              <h2>Weekly Schedule</h2>
+            </div>
+            <div class="summary-pills">
+              <div class="pill">
+                <span>Total</span>
+                <strong id="summary-total">0 min</strong>
+              </div>
+              <div class="pill">
+                <span>Reviews</span>
+                <strong id="summary-reviews">0</strong>
+              </div>
+            </div>
+          </header>
+
+          <p id="status" class="status">Generate a weekly plan from Create Plan.</p>
+          <div class="mini-calendar" id="mini-calendar">
+            <div class="mini-calendar-head">
+              <p id="mini-calendar-month">Month</p>
+              <div class="mini-calendar-nav">
+                <button type="button" id="week-prev" class="mini-nav-btn" aria-label="Previous week">&#8249;</button>
+                <button type="button" id="week-next" class="mini-nav-btn" aria-label="Next week">&#8250;</button>
+              </div>
+            </div>
+            <div class="mini-calendar-week" id="mini-calendar-week"></div>
+            <p class="mini-calendar-hint">Tap a day to filter sessions. Tap again to clear.</p>
           </div>
-          <div class="mini-calendar-week" id="mini-calendar-week"></div>
-          <p class="mini-calendar-hint">Tap a day to filter sessions. Tap again to clear.</p>
-        </div>
-        <div id="heuristics" class="heuristics"></div>
-        <div id="schedule-grid" class="schedule-grid"></div>
+          <div id="heuristics" class="heuristics"></div>
+          <div id="schedule-grid" class="schedule-grid"></div>
+        </section>
       </section>
     </main>
   </body>

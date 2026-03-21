@@ -1,5 +1,6 @@
 import "./styles.css";
 
+type AppView = "home" | "planner" | "output";
 type StudyStyle = "more_practice" | "more_theory" | "balanced";
 type TaskType = "exam" | "assignment" | "project" | "quiz";
 type ActivityType = "theory" | "practice" | "review" | "test";
@@ -79,23 +80,38 @@ const days: Array<keyof DailyHours> = [
   "sunday",
 ];
 
+const form = document.getElementById("planner-form") as HTMLFormElement;
+const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
 const dailyHoursGrid = document.getElementById("daily-hours-grid") as HTMLDivElement;
 const taskList = document.getElementById("task-list") as HTMLDivElement;
 const addTaskButton = document.getElementById("add-task") as HTMLButtonElement;
-const form = document.getElementById("planner-form") as HTMLFormElement;
+const demoButton = document.getElementById("fill-demo") as HTMLButtonElement;
+
+const navHome = document.getElementById("nav-home") as HTMLButtonElement;
+const navPlanner = document.getElementById("nav-planner") as HTMLButtonElement;
+const navOutput = document.getElementById("nav-output") as HTMLButtonElement;
+const goCreate = document.getElementById("go-create") as HTMLButtonElement;
+const goOutput = document.getElementById("go-output") as HTMLButtonElement;
+
+const homeView = document.getElementById("view-home") as HTMLElement;
+const plannerView = document.getElementById("view-planner") as HTMLElement;
+const outputView = document.getElementById("view-output") as HTMLElement;
+
+const widgetTotal = document.getElementById("widget-total") as HTMLElement;
+const widgetReviews = document.getElementById("widget-reviews") as HTMLElement;
+const widgetSessions = document.getElementById("widget-sessions") as HTMLElement;
+const widgetWeek = document.getElementById("widget-week") as HTMLElement;
+const homePreviewList = document.getElementById("home-preview-list") as HTMLElement;
+
 const statusBox = document.getElementById("status") as HTMLDivElement;
-const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
-const heuristicsBox = document.getElementById("heuristics") as HTMLDivElement;
 const summaryTotal = document.getElementById("summary-total") as HTMLSpanElement;
 const summaryReviews = document.getElementById("summary-reviews") as HTMLSpanElement;
-const demoButton = document.getElementById("fill-demo") as HTMLButtonElement;
 const miniCalendarMonth = document.getElementById("mini-calendar-month") as HTMLParagraphElement;
 const miniCalendarWeek = document.getElementById("mini-calendar-week") as HTMLDivElement;
 const weekPrevButton = document.getElementById("week-prev") as HTMLButtonElement;
 const weekNextButton = document.getElementById("week-next") as HTMLButtonElement;
-const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
-const plannerTaskbarToggle = document.getElementById("planner-taskbar-toggle") as HTMLButtonElement;
-const outputCloseButton = document.getElementById("output-close") as HTMLButtonElement;
+const heuristicsBox = document.getElementById("heuristics") as HTMLDivElement;
+const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
 
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
@@ -115,11 +131,27 @@ for (const day of days) {
   input.step = "0.5";
   input.value = day === "saturday" || day === "sunday" ? "2" : "1.5";
   input.id = `hours_${day}`;
-  input.ariaLabel = `${day} hours`;
 
   wrap.appendChild(dayText);
   wrap.appendChild(input);
   dailyHoursGrid.appendChild(wrap);
+}
+
+function switchView(view: AppView): void {
+  const map: Record<AppView, HTMLElement> = {
+    home: homeView,
+    planner: plannerView,
+    output: outputView,
+  };
+
+  for (const [key, element] of Object.entries(map) as Array<[AppView, HTMLElement]>) {
+    const isActive = key === view;
+    element.classList.toggle("active", isActive);
+  }
+
+  navHome.classList.toggle("active", view === "home");
+  navPlanner.classList.toggle("active", view === "planner");
+  navOutput.classList.toggle("active", view === "output");
 }
 
 function getDefaultWeekStartDate(): string {
@@ -161,35 +193,20 @@ function parseSubjects(raw: string): SubjectInput[] {
 function createTaskRow(draft?: Partial<TaskDraft>): void {
   const row = document.createElement("article");
   row.className = "task-row";
+
   row.innerHTML = `
-    <div class="task-grid">
-      <label>Subject
-        <input type="text" data-field="subject" value="${draft?.subject ?? ""}" placeholder="Algorithms" required />
-      </label>
-      <label>Title
-        <input type="text" data-field="title" value="${draft?.title ?? ""}" placeholder="Midterm prep" required />
-      </label>
-      <label>Due Date
-        <input type="date" data-field="dueDate" value="${draft?.dueDate ?? ""}" required />
-      </label>
-      <label>Minutes
-        <input type="number" data-field="minutes" min="30" step="15" value="${draft?.minutes ?? "120"}" required />
-      </label>
-      <label>Type
-        <select data-field="taskType">
-          <option value="exam" ${draft?.taskType === "exam" ? "selected" : ""}>Exam</option>
-          <option value="assignment" ${draft?.taskType === "assignment" ? "selected" : ""}>Assignment</option>
-          <option value="project" ${draft?.taskType === "project" ? "selected" : ""}>Project</option>
-          <option value="quiz" ${draft?.taskType === "quiz" ? "selected" : ""}>Quiz</option>
-        </select>
-      </label>
-      <label>Topic
-        <input type="text" data-field="topic" value="${draft?.topic ?? ""}" placeholder="Graphs + DP" />
-      </label>
-    </div>
-    <div class="task-row-actions">
-      <button type="button" class="ghost small task-remove">Remove</button>
-    </div>
+    <input type="text" data-field="subject" value="${draft?.subject ?? ""}" placeholder="Subject" required />
+    <input type="text" data-field="title" value="${draft?.title ?? ""}" placeholder="Title" required />
+    <input type="date" data-field="dueDate" value="${draft?.dueDate ?? ""}" required />
+    <input type="number" data-field="minutes" min="30" step="15" value="${draft?.minutes ?? "120"}" required />
+    <select data-field="taskType">
+      <option value="exam" ${draft?.taskType === "exam" ? "selected" : ""}>Exam</option>
+      <option value="assignment" ${draft?.taskType === "assignment" ? "selected" : ""}>Assignment</option>
+      <option value="project" ${draft?.taskType === "project" ? "selected" : ""}>Project</option>
+      <option value="quiz" ${draft?.taskType === "quiz" ? "selected" : ""}>Quiz</option>
+    </select>
+    <input type="text" data-field="topic" value="${draft?.topic ?? ""}" placeholder="Topic" />
+    <button type="button" class="ghost small task-remove" aria-label="Remove task">Remove</button>
   `;
 
   const removeButton = row.querySelector(".task-remove") as HTMLButtonElement;
@@ -278,11 +295,6 @@ function sessionIntensityClass(count: number): string {
   return "low";
 }
 
-function setPlannerCollapsed(collapsed: boolean): void {
-  document.body.classList.toggle("planner-collapsed", collapsed);
-  plannerTaskbarToggle.textContent = collapsed ? "Open Planner" : "Minimize to Side";
-}
-
 function renderMiniCalendar(
   weekStartDateIso: string,
   plannedDateSet: Set<string>,
@@ -340,6 +352,28 @@ function renderMiniCalendar(
   }
 }
 
+function updateHomeWidgets(response: StudyPlanResponse): void {
+  widgetTotal.textContent = `${response.summary.total_minutes} min`;
+  widgetReviews.textContent = String(response.summary.review_sessions);
+  widgetSessions.textContent = String(response.schedule.length);
+  widgetWeek.textContent = `${response.week_start_date} -> ${response.week_end_date}`;
+
+  const topSessions = response.schedule.slice(0, 4);
+  homePreviewList.innerHTML = topSessions.length
+    ? topSessions
+        .map(
+          (session) => `
+            <article class="preview-item">
+              <h4>${session.subject}</h4>
+              <p>${session.day} | ${session.topic}</p>
+              <strong>${session.minutes}m</strong>
+            </article>
+          `,
+        )
+        .join("")
+    : '<p class="muted-empty">No sessions generated yet.</p>';
+}
+
 function renderPlan(response: StudyPlanResponse): void {
   latestPlanResponse = response;
   scheduleGrid.innerHTML = "";
@@ -368,23 +402,21 @@ function renderPlan(response: StudyPlanResponse): void {
 
   for (const date of visibleDates) {
     const entries = grouped.get(date) ?? [];
-    const dayTitle = entries[0]?.day ?? "Day";
     const dayCard = document.createElement("article");
     dayCard.className = "day-card";
 
-    const header = document.createElement("header");
-    header.className = "day-card-header";
-    header.innerHTML = `
-      <div>
-        <p>${dayTitle}</p>
-        <h3>${date}</h3>
-      </div>
-      <strong>${entries.reduce((sum, item) => sum + item.minutes, 0)} min</strong>
+    dayCard.innerHTML = `
+      <header class="day-card-header">
+        <div>
+          <p>${entries[0]?.day ?? "Day"}</p>
+          <h3>${date}</h3>
+        </div>
+        <strong>${entries.reduce((sum, item) => sum + item.minutes, 0)} min</strong>
+      </header>
+      <div class="session-list"></div>
     `;
-    dayCard.appendChild(header);
 
-    const list = document.createElement("div");
-    list.className = "session-list";
+    const list = dayCard.querySelector(".session-list") as HTMLDivElement;
 
     for (const item of entries) {
       const row = document.createElement("div");
@@ -402,7 +434,6 @@ function renderPlan(response: StudyPlanResponse): void {
       list.appendChild(row);
     }
 
-    dayCard.appendChild(list);
     scheduleGrid.appendChild(dayCard);
   }
 
@@ -418,17 +449,78 @@ function renderPlan(response: StudyPlanResponse): void {
     statusBox.textContent = `Generated ${response.schedule.length} sessions from ${response.week_start_date} to ${response.week_end_date}.`;
   }
 
-  document.body.classList.add("plan-ready");
-  setPlannerCollapsed(true);
+  updateHomeWidgets(response);
+  navOutput.disabled = false;
+  goOutput.disabled = false;
+}
+
+async function requestPlan(): Promise<void> {
+  if (isGeneratingPlan) {
+    return;
+  }
+
+  isGeneratingPlan = true;
+  weekPrevButton.disabled = true;
+  weekNextButton.disabled = true;
+
+  try {
+    statusBox.textContent = "Generating plan...";
+    const studyStyle = (document.getElementById("study_style") as HTMLSelectElement).value as StudyStyle;
+    const maxSessionMinutes = Number((document.getElementById("max_session_minutes") as HTMLInputElement).value);
+
+    if (!weekStartInput.value) {
+      throw new Error("Please choose a week start date.");
+    }
+
+    const payload: StudyPlanRequest = {
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+      week_start_date: weekStartInput.value,
+      daily_hours: collectDailyHours(),
+      subjects: parseSubjects((document.getElementById("subjects") as HTMLTextAreaElement).value),
+      tasks: parseTasksFromEditor(),
+      study_style: studyStyle,
+      max_session_minutes: Number.isFinite(maxSessionMinutes) ? maxSessionMinutes : 90,
+    };
+
+    const response = await fetch(`${getApiBaseUrl()}/api/plan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Backend error: ${response.status} ${errorText}`);
+    }
+
+    selectedDateFilter = null;
+    renderPlan((await response.json()) as StudyPlanResponse);
+    switchView("output");
+  } catch (error) {
+    latestPlanResponse = null;
+    selectedDateFilter = null;
+    scheduleGrid.innerHTML = "";
+    renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+    statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
+  } finally {
+    isGeneratingPlan = false;
+    weekPrevButton.disabled = false;
+    weekNextButton.disabled = false;
+  }
 }
 
 function shiftWeek(daysToShift: number): void {
   const base = weekStartInput.value ? new Date(`${weekStartInput.value}T00:00:00`) : new Date();
-  const shifted = addDays(base, daysToShift);
-  weekStartInput.value = toIsoDate(shifted);
+  weekStartInput.value = toIsoDate(addDays(base, daysToShift));
   selectedDateFilter = null;
 
-  void requestPlan();
+  if (latestPlanResponse) {
+    void requestPlan();
+  } else {
+    renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+  }
 }
 
 function loadDemoData(): void {
@@ -465,92 +557,38 @@ function loadDemoData(): void {
   });
 }
 
-async function requestPlan(): Promise<void> {
-  if (isGeneratingPlan) {
-    return;
-  }
-
-  isGeneratingPlan = true;
-  weekPrevButton.disabled = true;
-  weekNextButton.disabled = true;
-
-  try {
-    statusBox.textContent = "Generating plan...";
-    const weekStart = weekStartInput.value;
-    const studyStyle = (document.getElementById("study_style") as HTMLSelectElement).value as StudyStyle;
-    const maxSessionMinutes = Number((document.getElementById("max_session_minutes") as HTMLInputElement).value);
-
-    if (!weekStart) {
-      throw new Error("Please choose a week start date.");
-    }
-
-    const payload: StudyPlanRequest = {
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-      week_start_date: weekStart,
-      daily_hours: collectDailyHours(),
-      subjects: parseSubjects((document.getElementById("subjects") as HTMLTextAreaElement).value),
-      tasks: parseTasksFromEditor(),
-      study_style: studyStyle,
-      max_session_minutes: Number.isFinite(maxSessionMinutes) ? maxSessionMinutes : 90,
-    };
-
-    const response = await fetch(`${getApiBaseUrl()}/api/plan`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Backend error: ${response.status} ${errorText}`);
-    }
-
-    const data = (await response.json()) as StudyPlanResponse;
-    selectedDateFilter = null;
-    renderPlan(data);
-  } catch (error) {
-    latestPlanResponse = null;
-    selectedDateFilter = null;
-    scheduleGrid.innerHTML = "";
-    renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
-    statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
-  } finally {
-    isGeneratingPlan = false;
-    weekPrevButton.disabled = false;
-    weekNextButton.disabled = false;
-  }
-}
-
 weekStartInput.value = getDefaultWeekStartDate();
 createTaskRow();
+loadDemoData();
+renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+switchView("home");
 
-plannerTaskbarToggle.addEventListener("click", () => {
-  const currentlyCollapsed = document.body.classList.contains("planner-collapsed");
-  setPlannerCollapsed(!currentlyCollapsed);
+navHome.addEventListener("click", () => switchView("home"));
+navPlanner.addEventListener("click", () => switchView("planner"));
+navOutput.addEventListener("click", () => {
+  if (!navOutput.disabled) {
+    switchView("output");
+  }
 });
 
-outputCloseButton.addEventListener("click", () => {
-  document.body.classList.remove("plan-ready");
-  setPlannerCollapsed(false);
+goCreate.addEventListener("click", () => switchView("planner"));
+goOutput.addEventListener("click", () => {
+  if (!goOutput.disabled) {
+    switchView("output");
+  }
 });
 
 addTaskButton.addEventListener("click", () => createTaskRow());
 demoButton.addEventListener("click", loadDemoData);
+
 weekPrevButton.addEventListener("click", () => shiftWeek(-7));
 weekNextButton.addEventListener("click", () => shiftWeek(7));
-
 weekStartInput.addEventListener("change", () => {
   selectedDateFilter = null;
   renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 });
 
-renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
-
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   await requestPlan();
 });
-
-loadDemoData();
