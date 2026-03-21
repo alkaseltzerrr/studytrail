@@ -14,6 +14,7 @@
       <section class="surface planner-surface">
         <header class="hero">
           <p class="eyebrow">StudyTrail Planner</p>
+          <button type="button" id="planner-taskbar-toggle" class="taskbar-toggle">Minimize to Side</button>
           <h1>Design your best week of study</h1>
           <p class="hero-copy">
             AI-style planning with deadline awareness, balanced workload, and built-in review cycles.
@@ -51,22 +52,17 @@
               <span class="input-hint">Format: Subject:Importance (1-5), one per line</span>
             </label>
 
-            <label class="input-block">Tasks
-              <textarea
-                id="tasks"
-                rows="5"
-                placeholder="Algorithms,Midterm,2026-03-28,300,exam,Graph algorithms&#10;Databases,Assignment 2,2026-03-27,180,assignment,Normalization"
-                required
-              ></textarea>
-              <span class="input-hint">Format: subject,title,due_date,minutes,type,topic</span>
-            </label>
+            <fieldset class="input-group task-editor">
+              <legend>Tasks</legend>
+              <div class="task-editor-head">
+                <p>Organized task rows</p>
+                <button type="button" id="add-task" class="ghost small">+ Add Task</button>
+              </div>
+              <div id="task-list" class="task-list"></div>
+            </fieldset>
           </div>
 
-          <div class="form-row two-col">
-            <label class="input-block">Backend URL
-              <input type="url" id="backend_url" value="http://127.0.0.1:8000" required />
-            </label>
-
+          <div class="form-row">
             <label class="input-block">Max Session Minutes
               <input type="number" id="max_session_minutes" value="90" min="30" max="180" step="15" required />
             </label>
@@ -85,6 +81,7 @@
             <p class="eyebrow">Plan Output</p>
             <h2>Weekly Schedule</h2>
           </div>
+          <button type="button" id="output-close" class="ghost small output-close">Close</button>
           <div class="summary-pills">
             <div class="pill">
               <span>Total</span>

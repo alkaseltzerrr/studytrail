@@ -60,6 +60,15 @@ type StudyPlanResponse = {
   };
 };
 
+type TaskDraft = {
+  subject: string;
+  title: string;
+  dueDate: string;
+  minutes: string;
+  taskType: TaskType;
+  topic: string;
+};
+
 const days: Array<keyof DailyHours> = [
   "monday",
   "tuesday",
@@ -71,6 +80,8 @@ const days: Array<keyof DailyHours> = [
 ];
 
 const dailyHoursGrid = document.getElementById("daily-hours-grid") as HTMLDivElement;
+const taskList = document.getElementById("task-list") as HTMLDivElement;
+const addTaskButton = document.getElementById("add-task") as HTMLButtonElement;
 const form = document.getElementById("planner-form") as HTMLFormElement;
 const statusBox = document.getElementById("status") as HTMLDivElement;
 const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
@@ -83,6 +94,8 @@ const miniCalendarWeek = document.getElementById("mini-calendar-week") as HTMLDi
 const weekPrevButton = document.getElementById("week-prev") as HTMLButtonElement;
 const weekNextButton = document.getElementById("week-next") as HTMLButtonElement;
 const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
+const plannerTaskbarToggle = document.getElementById("planner-taskbar-toggle") as HTMLButtonElement;
+const outputCloseButton = document.getElementById("output-close") as HTMLButtonElement;
 
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
@@ -118,7 +131,13 @@ function getDefaultWeekStartDate(): string {
   return monday.toISOString().slice(0, 10);
 }
 
-weekStartInput.value = getDefaultWeekStartDate();
+function getApiBaseUrl(): string {
+  const { hostname } = window.location;
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return "http://127.0.0.1:8000";
+  }
+  return "";
+}
 
 function normalizeImportance(value: number): number {
   return Math.min(5, Math.max(1, Math.round(value)));
@@ -139,33 +158,79 @@ function parseSubjects(raw: string): SubjectInput[] {
     });
 }
 
-function parseTasks(raw: string): StudyTaskInput[] {
-  return raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split(",").map((part) => part.trim());
-      if (parts.length < 5) {
-        throw new Error(`Invalid task row: ${line}`);
-      }
-      const [subject, title, dueDate, minutesText, taskTypeText, topic] = parts;
-      const estimated_total_minutes = Number(minutesText);
-      if (!subject || !title || !dueDate || !Number.isFinite(estimated_total_minutes)) {
-        throw new Error(`Invalid task row: ${line}`);
-      }
-      if (!["exam", "assignment", "project", "quiz"].includes(taskTypeText)) {
-        throw new Error(`Invalid task type in row: ${line}`);
-      }
-      return {
-        subject,
-        title,
-        due_date: dueDate,
-        estimated_total_minutes,
-        task_type: taskTypeText as TaskType,
-        topic,
-      };
-    });
+function createTaskRow(draft?: Partial<TaskDraft>): void {
+  const row = document.createElement("article");
+  row.className = "task-row";
+  row.innerHTML = `
+    <div class="task-grid">
+      <label>Subject
+        <input type="text" data-field="subject" value="${draft?.subject ?? ""}" placeholder="Algorithms" required />
+      </label>
+      <label>Title
+        <input type="text" data-field="title" value="${draft?.title ?? ""}" placeholder="Midterm prep" required />
+      </label>
+      <label>Due Date
+        <input type="date" data-field="dueDate" value="${draft?.dueDate ?? ""}" required />
+      </label>
+      <label>Minutes
+        <input type="number" data-field="minutes" min="30" step="15" value="${draft?.minutes ?? "120"}" required />
+      </label>
+      <label>Type
+        <select data-field="taskType">
+          <option value="exam" ${draft?.taskType === "exam" ? "selected" : ""}>Exam</option>
+          <option value="assignment" ${draft?.taskType === "assignment" ? "selected" : ""}>Assignment</option>
+          <option value="project" ${draft?.taskType === "project" ? "selected" : ""}>Project</option>
+          <option value="quiz" ${draft?.taskType === "quiz" ? "selected" : ""}>Quiz</option>
+        </select>
+      </label>
+      <label>Topic
+        <input type="text" data-field="topic" value="${draft?.topic ?? ""}" placeholder="Graphs + DP" />
+      </label>
+    </div>
+    <div class="task-row-actions">
+      <button type="button" class="ghost small task-remove">Remove</button>
+    </div>
+  `;
+
+  const removeButton = row.querySelector(".task-remove") as HTMLButtonElement;
+  removeButton.addEventListener("click", () => {
+    row.remove();
+    if (taskList.children.length === 0) {
+      createTaskRow();
+    }
+  });
+
+  taskList.appendChild(row);
+}
+
+function parseTasksFromEditor(): StudyTaskInput[] {
+  const rows = Array.from(taskList.querySelectorAll(".task-row"));
+  if (rows.length === 0) {
+    throw new Error("Please add at least one task.");
+  }
+
+  return rows.map((row, rowIndex) => {
+    const subject = (row.querySelector('[data-field="subject"]') as HTMLInputElement).value.trim();
+    const title = (row.querySelector('[data-field="title"]') as HTMLInputElement).value.trim();
+    const dueDate = (row.querySelector('[data-field="dueDate"]') as HTMLInputElement).value;
+    const minutesText = (row.querySelector('[data-field="minutes"]') as HTMLInputElement).value;
+    const taskType = (row.querySelector('[data-field="taskType"]') as HTMLSelectElement).value as TaskType;
+    const topic = (row.querySelector('[data-field="topic"]') as HTMLInputElement).value.trim();
+    const estimated_total_minutes = Number(minutesText);
+
+    if (!subject || !title || !dueDate || !Number.isFinite(estimated_total_minutes)) {
+      throw new Error(`Task ${rowIndex + 1} is incomplete.`);
+    }
+
+    return {
+      subject,
+      title,
+      due_date: dueDate,
+      estimated_total_minutes,
+      task_type: taskType,
+      topic: topic || undefined,
+    };
+  });
 }
 
 function collectDailyHours(): DailyHours {
@@ -211,6 +276,11 @@ function sessionIntensityClass(count: number): string {
     return "medium";
   }
   return "low";
+}
+
+function setPlannerCollapsed(collapsed: boolean): void {
+  document.body.classList.toggle("planner-collapsed", collapsed);
+  plannerTaskbarToggle.textContent = collapsed ? "Open Planner" : "Minimize to Side";
 }
 
 function renderMiniCalendar(
@@ -331,6 +401,7 @@ function renderPlan(response: StudyPlanResponse): void {
       `;
       list.appendChild(row);
     }
+
     dayCard.appendChild(list);
     scheduleGrid.appendChild(dayCard);
   }
@@ -346,6 +417,9 @@ function renderPlan(response: StudyPlanResponse): void {
   } else {
     statusBox.textContent = `Generated ${response.schedule.length} sessions from ${response.week_start_date} to ${response.week_end_date}.`;
   }
+
+  document.body.classList.add("plan-ready");
+  setPlannerCollapsed(true);
 }
 
 function shiftWeek(daysToShift: number): void {
@@ -364,23 +438,32 @@ function loadDemoData(): void {
     "Software Engineering:4",
   ].join("\n");
 
-  (document.getElementById("tasks") as HTMLTextAreaElement).value = [
-    "Algorithms,Midterm prep,2026-03-28,360,exam,Graphs and dynamic programming",
-    "Databases,Project milestone,2026-03-27,210,project,Schema + query optimization",
-    "Software Engineering,Weekly quiz,2026-03-26,120,quiz,Design patterns",
-  ].join("\n");
+  taskList.innerHTML = "";
+  createTaskRow({
+    subject: "Algorithms",
+    title: "Midterm prep",
+    dueDate: "2026-03-28",
+    minutes: "360",
+    taskType: "exam",
+    topic: "Graphs and dynamic programming",
+  });
+  createTaskRow({
+    subject: "Databases",
+    title: "Project milestone",
+    dueDate: "2026-03-27",
+    minutes: "210",
+    taskType: "project",
+    topic: "Schema + query optimization",
+  });
+  createTaskRow({
+    subject: "Software Engineering",
+    title: "Weekly quiz",
+    dueDate: "2026-03-26",
+    minutes: "120",
+    taskType: "quiz",
+    topic: "Design patterns",
+  });
 }
-
-demoButton.addEventListener("click", loadDemoData);
-
-weekPrevButton.addEventListener("click", () => shiftWeek(-7));
-weekNextButton.addEventListener("click", () => shiftWeek(7));
-weekStartInput.addEventListener("change", () => {
-  selectedDateFilter = null;
-  renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
-});
-
-renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 
 async function requestPlan(): Promise<void> {
   if (isGeneratingPlan) {
@@ -393,7 +476,6 @@ async function requestPlan(): Promise<void> {
 
   try {
     statusBox.textContent = "Generating plan...";
-    const backendUrl = (document.getElementById("backend_url") as HTMLInputElement).value;
     const weekStart = weekStartInput.value;
     const studyStyle = (document.getElementById("study_style") as HTMLSelectElement).value as StudyStyle;
     const maxSessionMinutes = Number((document.getElementById("max_session_minutes") as HTMLInputElement).value);
@@ -407,12 +489,12 @@ async function requestPlan(): Promise<void> {
       week_start_date: weekStart,
       daily_hours: collectDailyHours(),
       subjects: parseSubjects((document.getElementById("subjects") as HTMLTextAreaElement).value),
-      tasks: parseTasks((document.getElementById("tasks") as HTMLTextAreaElement).value),
+      tasks: parseTasksFromEditor(),
       study_style: studyStyle,
       max_session_minutes: Number.isFinite(maxSessionMinutes) ? maxSessionMinutes : 90,
     };
 
-    const response = await fetch(`${backendUrl}/api/plan`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/plan`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -440,6 +522,31 @@ async function requestPlan(): Promise<void> {
     weekNextButton.disabled = false;
   }
 }
+
+weekStartInput.value = getDefaultWeekStartDate();
+createTaskRow();
+
+plannerTaskbarToggle.addEventListener("click", () => {
+  const currentlyCollapsed = document.body.classList.contains("planner-collapsed");
+  setPlannerCollapsed(!currentlyCollapsed);
+});
+
+outputCloseButton.addEventListener("click", () => {
+  document.body.classList.remove("plan-ready");
+  setPlannerCollapsed(false);
+});
+
+addTaskButton.addEventListener("click", () => createTaskRow());
+demoButton.addEventListener("click", loadDemoData);
+weekPrevButton.addEventListener("click", () => shiftWeek(-7));
+weekNextButton.addEventListener("click", () => shiftWeek(7));
+
+weekStartInput.addEventListener("change", () => {
+  selectedDateFilter = null;
+  renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+});
+
+renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -75,6 +75,7 @@ body {
 
 .hero {
   margin-bottom: 18px;
+  position: relative;
 }
 
 .eyebrow {
@@ -127,6 +128,58 @@ h2 {
   gap: 7px;
   font-weight: 700;
   color: #2a3c45;
+}
+
+.task-editor {
+  gap: 10px;
+}
+
+.task-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.task-editor-head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.task-list {
+  display: grid;
+  gap: 10px;
+  max-height: 290px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.task-row {
+  border: 1px solid var(--line);
+  background: #f6fbfa;
+  border-radius: 16px;
+  padding: 10px;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.task-grid label {
+  display: grid;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.task-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .input-group {
@@ -235,6 +288,18 @@ button.ghost {
   border: 1px solid var(--line);
 }
 
+button.small {
+  width: auto;
+  padding: 7px 10px;
+  font-size: 0.78rem;
+}
+
+.taskbar-toggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
 .schedule-header {
   display: flex;
   flex-wrap: wrap;
@@ -246,6 +311,10 @@ button.ghost {
 .summary-pills {
   display: flex;
   gap: 10px;
+}
+
+.output-close {
+  display: none;
 }
 
 .pill {
@@ -529,6 +598,65 @@ button.ghost {
   color: var(--danger);
 }
 
+body.plan-ready::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 45, 56, 0.22);
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+
+body.plan-ready .schedule-surface {
+  position: fixed;
+  right: 2.5vw;
+  top: 2.8vh;
+  width: min(860px, 67vw);
+  max-height: 94vh;
+  overflow: auto;
+  z-index: 30;
+}
+
+body.plan-ready .output-close {
+  display: inline-flex;
+  align-items: center;
+}
+
+body.plan-ready .planner-surface {
+  position: fixed;
+  left: 16px;
+  top: 18px;
+  width: min(520px, 31vw);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  z-index: 31;
+}
+
+body.plan-ready.planner-collapsed .planner-surface {
+  width: 82px;
+  padding: 12px 10px;
+  overflow: hidden;
+}
+
+body.plan-ready.planner-collapsed .planner-surface .hero > :not(.taskbar-toggle) {
+  display: none;
+}
+
+body.plan-ready.planner-collapsed .planner-form {
+  display: none;
+}
+
+body.plan-ready.planner-collapsed .taskbar-toggle {
+  position: static;
+  width: 100%;
+  height: calc(100vh - 72px);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  border-radius: 24px;
+  font-size: 0.92rem;
+}
+
 @media (min-width: 960px) {
   .app-shell {
     grid-template-columns: 1.05fr 1fr;
@@ -583,5 +711,44 @@ button.ghost {
 
   .mini-day {
     min-height: 52px;
+  }
+
+  .task-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 959px) {
+  body.plan-ready::before {
+    display: none;
+  }
+
+  body.plan-ready .schedule-surface,
+  body.plan-ready .planner-surface {
+    position: static;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body.plan-ready.planner-collapsed .planner-surface {
+    width: auto;
+    padding: 16px;
+  }
+
+  body.plan-ready.planner-collapsed .planner-surface .hero > :not(.taskbar-toggle),
+  body.plan-ready.planner-collapsed .planner-form {
+    display: grid;
+  }
+
+  body.plan-ready.planner-collapsed .taskbar-toggle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    writing-mode: horizontal-tb;
+    transform: none;
+    border-radius: 15px;
   }
 }
