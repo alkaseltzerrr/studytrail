@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://studytrail.app/schemas/output.schema.json",
+  "title": "StudyPlanResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["week_start_date", "week_end_date", "schedule", "summary"],
+  "properties": {
+    "week_start_date": { "type": "string", "format": "date" },
+    "week_end_date": { "type": "string", "format": "date" },
+    "schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "day", "subject", "topic", "minutes", "activity_type"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "day": {
+            "type": "string",
+            "enum": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+          },
+          "subject": { "type": "string" },
+          "topic": { "type": "string" },
+          "minutes": { "type": "integer", "minimum": 15 },
+          "activity_type": {
+            "type": "string",
+            "enum": ["theory", "practice", "review", "test"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_minutes",
+        "minutes_by_subject",
+        "review_sessions",
+        "heuristics_used"
+      ],
+      "properties": {
+        "total_minutes": { "type": "integer", "minimum": 0 },
+        "minutes_by_subject": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "review_sessions": { "type": "integer", "minimum": 0 },
+        "heuristics_used": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
