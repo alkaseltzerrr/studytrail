@@ -86,6 +86,7 @@ const weekStartInput = document.getElementById("week_start_date") as HTMLInputEl
 
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
+let isGeneratingPlan = false;
 
 for (const day of days) {
   const wrap = document.createElement("label");
@@ -353,11 +354,7 @@ function shiftWeek(daysToShift: number): void {
   weekStartInput.value = toIsoDate(shifted);
   selectedDateFilter = null;
 
-  if (latestPlanResponse) {
-    statusBox.textContent = "Week updated. Generate plan to refresh sessions for this week.";
-  }
-
-  renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+  void requestPlan();
 }
 
 function loadDemoData(): void {
@@ -385,8 +382,14 @@ weekStartInput.addEventListener("change", () => {
 
 renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function requestPlan(): Promise<void> {
+  if (isGeneratingPlan) {
+    return;
+  }
+
+  isGeneratingPlan = true;
+  weekPrevButton.disabled = true;
+  weekNextButton.disabled = true;
 
   try {
     statusBox.textContent = "Generating plan...";
@@ -431,7 +434,16 @@ form.addEventListener("submit", async (event) => {
     scheduleGrid.innerHTML = "";
     renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
     statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
+  } finally {
+    isGeneratingPlan = false;
+    weekPrevButton.disabled = false;
+    weekNextButton.disabled = false;
   }
+}
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await requestPlan();
 });
 
 loadDemoData();
