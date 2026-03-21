@@ -7,63 +7,106 @@
     <script type="module" src="/src/main.ts" defer></script>
   </head>
   <body>
-    <div class="container">
-      <h1>StudyTrail AI Planner</h1>
-      <p>Create a weekly, personalized study plan.</p>
+    <div class="bg-shape bg-shape-top"></div>
+    <div class="bg-shape bg-shape-bottom"></div>
 
-      <form id="planner-form">
-        <label>Week start date
-          <input type="date" id="week_start_date" required />
-        </label>
+    <main class="app-shell">
+      <section class="surface planner-surface">
+        <header class="hero">
+          <p class="eyebrow">StudyTrail Planner</p>
+          <h1>Design your best week of study</h1>
+          <p class="hero-copy">
+            AI-style planning with deadline awareness, balanced workload, and built-in review cycles.
+          </p>
+        </header>
 
-        <label>Preferred style
-          <select id="study_style">
-            <option value="balanced">Balanced</option>
-            <option value="more_practice">More practice</option>
-            <option value="more_theory">More theory</option>
-          </select>
-        </label>
+        <form id="planner-form" class="planner-form">
+          <div class="form-row two-col">
+            <label class="input-block">Week Start Date
+              <input type="date" id="week_start_date" required />
+            </label>
 
-        <fieldset>
-          <legend>Daily study hours</legend>
-          <div class="grid" id="daily-hours-grid"></div>
-        </fieldset>
+            <label class="input-block">Preferred Study Style
+              <select id="study_style">
+                <option value="balanced">Balanced</option>
+                <option value="more_practice">More Practice</option>
+                <option value="more_theory">More Theory</option>
+              </select>
+            </label>
+          </div>
 
-        <fieldset>
-          <legend>Subjects (name:importance 1-5)</legend>
-          <textarea id="subjects" rows="4" placeholder="Algorithms:5&#10;Databases:4" required></textarea>
-        </fieldset>
+          <fieldset class="input-group">
+            <legend>Daily Available Hours</legend>
+            <div class="daily-grid" id="daily-hours-grid"></div>
+          </fieldset>
 
-        <fieldset>
-          <legend>Tasks (subject,title,due_date,minutes,type,topic)</legend>
-          <textarea id="tasks" rows="6" placeholder="Algorithms,Midterm,2026-03-28,300,exam,Graph algorithms&#10;Databases,Assignment 2,2026-03-27,180,assignment,Normalization" required></textarea>
-        </fieldset>
+          <div class="form-row two-col">
+            <label class="input-block">Subjects
+              <textarea
+                id="subjects"
+                rows="5"
+                placeholder="Algorithms:5&#10;Databases:4&#10;Operating Systems:3"
+                required
+              ></textarea>
+              <span class="input-hint">Format: Subject:Importance (1-5), one per line</span>
+            </label>
 
-        <label>Backend URL
-          <input type="url" id="backend_url" value="http://127.0.0.1:8000" required />
-        </label>
+            <label class="input-block">Tasks
+              <textarea
+                id="tasks"
+                rows="5"
+                placeholder="Algorithms,Midterm,2026-03-28,300,exam,Graph algorithms&#10;Databases,Assignment 2,2026-03-27,180,assignment,Normalization"
+                required
+              ></textarea>
+              <span class="input-hint">Format: subject,title,due_date,minutes,type,topic</span>
+            </label>
+          </div>
 
-        <button type="submit">Generate plan</button>
-      </form>
+          <div class="form-row two-col">
+            <label class="input-block">Backend URL
+              <input type="url" id="backend_url" value="http://127.0.0.1:8000" required />
+            </label>
 
-      <section>
-        <h2>Weekly schedule</h2>
-        <div id="status"></div>
-        <table id="plan-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Day</th>
-              <th>Subject</th>
-              <th>Topic</th>
-              <th>Minutes</th>
-              <th>Activity</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+            <label class="input-block">Max Session Minutes
+              <input type="number" id="max_session_minutes" value="90" min="30" max="180" step="15" required />
+            </label>
+          </div>
+
+          <div class="actions">
+            <button type="button" id="fill-demo" class="ghost">Load Demo Data</button>
+            <button type="submit" class="primary">Generate Weekly Plan</button>
+          </div>
+        </form>
       </section>
-    </div>
+
+      <section class="surface schedule-surface">
+        <header class="schedule-header">
+          <div>
+            <p class="eyebrow">Plan Output</p>
+            <h2>Weekly Schedule</h2>
+          </div>
+          <div class="summary-pills">
+            <div class="pill">
+              <span>Total</span>
+              <strong id="summary-total">0 min</strong>
+            </div>
+            <div class="pill">
+              <span>Reviews</span>
+              <strong id="summary-reviews">0</strong>
+            </div>
+          </div>
+        </header>
+
+        <p id="status" class="status">Fill the form and generate your plan.</p>
+        <div class="mini-calendar" id="mini-calendar">
+          <div class="mini-calendar-head">
+            <p id="mini-calendar-month">Month</p>
+          </div>
+          <div class="mini-calendar-week" id="mini-calendar-week"></div>
+        </div>
+        <div id="heuristics" class="heuristics"></div>
+        <div id="schedule-grid" class="schedule-grid"></div>
+      </section>
+    </main>
   </body>
 </html>
