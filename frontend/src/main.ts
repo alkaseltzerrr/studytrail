@@ -80,6 +80,12 @@ const summaryReviews = document.getElementById("summary-reviews") as HTMLSpanEle
 const demoButton = document.getElementById("fill-demo") as HTMLButtonElement;
 const miniCalendarMonth = document.getElementById("mini-calendar-month") as HTMLParagraphElement;
 const miniCalendarWeek = document.getElementById("mini-calendar-week") as HTMLDivElement;
+const weekPrevButton = document.getElementById("week-prev") as HTMLButtonElement;
+const weekNextButton = document.getElementById("week-next") as HTMLButtonElement;
+const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
+
+let latestPlanResponse: StudyPlanResponse | null = null;
+let selectedDateFilter: string | null = null;
 
 for (const day of days) {
   const wrap = document.createElement("label");
@@ -111,7 +117,7 @@ function getDefaultWeekStartDate(): string {
   return monday.toISOString().slice(0, 10);
 }
 
-(document.getElementById("week_start_date") as HTMLInputElement).value = getDefaultWeekStartDate();
+weekStartInput.value = getDefaultWeekStartDate();
 
 function normalizeImportance(value: number): number {
   return Math.min(5, Math.max(1, Math.round(value)));
@@ -196,7 +202,22 @@ function toIsoDate(inputDate: Date): string {
   return inputDate.toISOString().slice(0, 10);
 }
 
-function renderMiniCalendar(weekStartDateIso: string, plannedDateSet: Set<string>): void {
+function sessionIntensityClass(count: number): string {
+  if (count >= 3) {
+    return "high";
+  }
+  if (count === 2) {
+    return "medium";
+  }
+  return "low";
+}
+
+function renderMiniCalendar(
+  weekStartDateIso: string,
+  plannedDateSet: Set<string>,
+  sessionCountsByDate: Map<string, number>,
+  selectedDate: string | null,
+): void {
   miniCalendarWeek.innerHTML = "";
 
   const weekStartDate = new Date(`${weekStartDateIso}T00:00:00`);
@@ -216,20 +237,40 @@ function renderMiniCalendar(weekStartDateIso: string, plannedDateSet: Set<string
     if (plannedDateSet.has(currentIso)) {
       dayCell.classList.add("has-plan");
     }
+    if (currentIso === selectedDate) {
+      dayCell.classList.add("selected");
+    }
     if (currentIso === nowIso) {
       dayCell.classList.add("today");
     }
 
+    const sessionCount = sessionCountsByDate.get(currentIso) ?? 0;
+    const dotCount = Math.min(3, sessionCount);
+    const dots = Array.from({ length: dotCount })
+      .map(() => `<i class="dot ${sessionIntensityClass(sessionCount)}"></i>`)
+      .join("");
+
     dayCell.innerHTML = `
       <span>${current.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1)}</span>
       <strong>${current.getDate()}</strong>
+      <small class="dots">${dots}</small>
     `;
+
+    dayCell.addEventListener("click", () => {
+      selectedDateFilter = selectedDateFilter === currentIso ? null : currentIso;
+      if (latestPlanResponse) {
+        renderPlan(latestPlanResponse);
+      } else {
+        renderMiniCalendar(weekStartInput.value, new Set(), new Map(), selectedDateFilter);
+      }
+    });
 
     miniCalendarWeek.appendChild(dayCell);
   }
 }
 
 function renderPlan(response: StudyPlanResponse): void {
+  latestPlanResponse = response;
   scheduleGrid.innerHTML = "";
 
   const grouped = new Map<string, PlanEntry[]>();
@@ -241,9 +282,20 @@ function renderPlan(response: StudyPlanResponse): void {
   }
 
   const dates = Array.from(grouped.keys()).sort();
-  renderMiniCalendar(response.week_start_date, new Set(dates));
-
+  const counts = new Map<string, number>();
   for (const date of dates) {
+    counts.set(date, grouped.get(date)?.length ?? 0);
+  }
+
+  if (selectedDateFilter && !grouped.has(selectedDateFilter)) {
+    selectedDateFilter = null;
+  }
+
+  renderMiniCalendar(response.week_start_date, new Set(dates), counts, selectedDateFilter);
+
+  const visibleDates = selectedDateFilter ? dates.filter((date) => date === selectedDateFilter) : dates;
+
+  for (const date of visibleDates) {
     const entries = grouped.get(date) ?? [];
     const dayTitle = entries[0]?.day ?? "Day";
     const dayCard = document.createElement("article");
@@ -288,7 +340,24 @@ function renderPlan(response: StudyPlanResponse): void {
     .map((heuristic) => `<span class="heuristic-pill">${heuristic}</span>`)
     .join("");
 
-  statusBox.textContent = `Generated ${response.schedule.length} sessions from ${response.week_start_date} to ${response.week_end_date}.`;
+  if (selectedDateFilter) {
+    statusBox.textContent = `Showing ${grouped.get(selectedDateFilter)?.length ?? 0} sessions on ${selectedDateFilter}.`;
+  } else {
+    statusBox.textContent = `Generated ${response.schedule.length} sessions from ${response.week_start_date} to ${response.week_end_date}.`;
+  }
+}
+
+function shiftWeek(daysToShift: number): void {
+  const base = weekStartInput.value ? new Date(`${weekStartInput.value}T00:00:00`) : new Date();
+  const shifted = addDays(base, daysToShift);
+  weekStartInput.value = toIsoDate(shifted);
+  selectedDateFilter = null;
+
+  if (latestPlanResponse) {
+    statusBox.textContent = "Week updated. Generate plan to refresh sessions for this week.";
+  }
+
+  renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 }
 
 function loadDemoData(): void {
@@ -307,7 +376,14 @@ function loadDemoData(): void {
 
 demoButton.addEventListener("click", loadDemoData);
 
-renderMiniCalendar((document.getElementById("week_start_date") as HTMLInputElement).value, new Set());
+weekPrevButton.addEventListener("click", () => shiftWeek(-7));
+weekNextButton.addEventListener("click", () => shiftWeek(7));
+weekStartInput.addEventListener("change", () => {
+  selectedDateFilter = null;
+  renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
+});
+
+renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -315,7 +391,7 @@ form.addEventListener("submit", async (event) => {
   try {
     statusBox.textContent = "Generating plan...";
     const backendUrl = (document.getElementById("backend_url") as HTMLInputElement).value;
-    const weekStart = (document.getElementById("week_start_date") as HTMLInputElement).value;
+    const weekStart = weekStartInput.value;
     const studyStyle = (document.getElementById("study_style") as HTMLSelectElement).value as StudyStyle;
     const maxSessionMinutes = Number((document.getElementById("max_session_minutes") as HTMLInputElement).value);
 
@@ -347,9 +423,13 @@ form.addEventListener("submit", async (event) => {
     }
 
     const data = (await response.json()) as StudyPlanResponse;
+    selectedDateFilter = null;
     renderPlan(data);
   } catch (error) {
+    latestPlanResponse = null;
+    selectedDateFilter = null;
     scheduleGrid.innerHTML = "";
+    renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
     statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
   }
 });

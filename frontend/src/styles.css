@@ -295,6 +295,25 @@ button.ghost {
   margin-bottom: 8px;
 }
 
+.mini-calendar-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-nav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #b9d6d0;
+  background: #eef8f4;
+  color: #2a5058;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
 .mini-calendar-head p {
   margin: 0;
   font-size: 0.9rem;
@@ -317,6 +336,12 @@ button.ghost {
   place-items: center;
   align-content: center;
   font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.mini-day:hover {
+  transform: translateY(-1px);
 }
 
 .mini-day span {
@@ -330,15 +355,53 @@ button.ghost {
   font-family: "Space Grotesk", sans-serif;
 }
 
+.dots {
+  min-height: 8px;
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dot.low {
+  background: #88b8af;
+}
+
+.dot.medium {
+  background: #5e9f93;
+}
+
+.dot.high {
+  background: #357c6f;
+}
+
 .mini-day.has-plan {
   background: #d9ece7;
   border-color: #9fcfc6;
+}
+
+.mini-day.selected {
+  background: #c4e0d9;
+  border-color: #73aea2;
 }
 
 .mini-day.today {
   background: #cad7fa;
   border-color: #8ca5e5;
   color: #213f88;
+}
+
+.mini-calendar-hint {
+  margin: 8px 2px 0;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
 }
 
 .heuristics {
