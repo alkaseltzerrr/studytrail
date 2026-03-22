@@ -58,6 +58,30 @@ body {
   padding: 18px 14px 28px;
   display: grid;
   gap: 14px;
+  transition: transform 0.22s ease, opacity 0.22s ease, filter 0.22s ease;
+}
+
+.app-shell.route-out {
+  transform: translateY(7px) scale(0.995);
+  opacity: 0.56;
+  filter: blur(1px);
+}
+
+.app-shell.route-in {
+  animation: route-enter 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes route-enter {
+  from {
+    transform: translateY(8px) scale(0.995);
+    opacity: 0.58;
+    filter: blur(1px);
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 .surface {
@@ -136,6 +160,18 @@ h2 {
 
 .view.active {
   display: grid;
+  animation: view-fade-up 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes view-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-hero {
@@ -373,11 +409,17 @@ button {
   cursor: pointer;
   font-weight: 700;
   padding: 11px 15px;
-  transition: transform 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
 button:hover {
   transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(35, 63, 89, 0.14);
+}
+
+button:active {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.98);
 }
 
 button.primary {

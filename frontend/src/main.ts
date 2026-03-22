@@ -81,6 +81,7 @@ const days: Array<keyof DailyHours> = [
 ];
 
 const form = document.getElementById("planner-form") as HTMLFormElement;
+const appShell = document.querySelector(".app-shell") as HTMLElement;
 const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
 const dailyHoursGrid = document.getElementById("daily-hours-grid") as HTMLDivElement;
 const taskList = document.getElementById("task-list") as HTMLDivElement;
@@ -116,6 +117,8 @@ const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
 let isGeneratingPlan = false;
+let isNavigatingView = false;
+let currentView: AppView = "home";
 
 for (const day of days) {
   const wrap = document.createElement("label");
@@ -152,6 +155,34 @@ function switchView(view: AppView): void {
   navHome.classList.toggle("active", view === "home");
   navPlanner.classList.toggle("active", view === "planner");
   navOutput.classList.toggle("active", view === "output");
+  currentView = view;
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
+
+async function animateToView(view: AppView): Promise<void> {
+  if (isNavigatingView || view === currentView) {
+    return;
+  }
+
+  isNavigatingView = true;
+  appShell.classList.add("route-out");
+  await delay(170);
+
+  switchView(view);
+
+  appShell.classList.remove("route-out");
+  appShell.classList.remove("route-in");
+  void appShell.offsetWidth;
+  appShell.classList.add("route-in");
+
+  await delay(260);
+  appShell.classList.remove("route-in");
+  isNavigatingView = false;
 }
 
 function getDefaultWeekStartDate(): string {
@@ -497,7 +528,7 @@ async function requestPlan(): Promise<void> {
 
     selectedDateFilter = null;
     renderPlan((await response.json()) as StudyPlanResponse);
-    switchView("output");
+    await animateToView("output");
   } catch (error) {
     latestPlanResponse = null;
     selectedDateFilter = null;
@@ -563,18 +594,24 @@ loadDemoData();
 renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 switchView("home");
 
-navHome.addEventListener("click", () => switchView("home"));
-navPlanner.addEventListener("click", () => switchView("planner"));
+navHome.addEventListener("click", () => {
+  void animateToView("home");
+});
+navPlanner.addEventListener("click", () => {
+  void animateToView("planner");
+});
 navOutput.addEventListener("click", () => {
   if (!navOutput.disabled) {
-    switchView("output");
+    void animateToView("output");
   }
 });
 
-goCreate.addEventListener("click", () => switchView("planner"));
+goCreate.addEventListener("click", () => {
+  void animateToView("planner");
+});
 goOutput.addEventListener("click", () => {
   if (!goOutput.disabled) {
-    switchView("output");
+    void animateToView("output");
   }
 });
 
