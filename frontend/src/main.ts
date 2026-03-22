@@ -81,7 +81,6 @@ const days: Array<keyof DailyHours> = [
 ];
 
 const form = document.getElementById("planner-form") as HTMLFormElement;
-const appShell = document.querySelector(".app-shell") as HTMLElement;
 const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
 const dailyHoursGrid = document.getElementById("daily-hours-grid") as HTMLDivElement;
 const taskList = document.getElementById("task-list") as HTMLDivElement;
@@ -164,16 +163,30 @@ async function animateToView(view: AppView): Promise<void> {
   }
 
   isViewTransitioning = true;
-  appShell.classList.add("soft-switch");
-  await new Promise((resolve) => window.setTimeout(resolve, 90));
+  const leavingView = document.querySelector(".view.active") as HTMLElement | null;
+
+  if (leavingView) {
+    leavingView.classList.add("leaving");
+    await new Promise((resolve) => window.setTimeout(resolve, 220));
+  }
 
   switchView(view);
 
-  appShell.classList.remove("soft-switch");
-  void appShell.offsetWidth;
-  appShell.classList.add("soft-enter");
-  await new Promise((resolve) => window.setTimeout(resolve, 140));
-  appShell.classList.remove("soft-enter");
+  if (leavingView) {
+    leavingView.classList.remove("leaving");
+  }
+
+  const enteringView = document.querySelector(".view.active") as HTMLElement | null;
+  if (enteringView) {
+    enteringView.classList.add("entering");
+    window.requestAnimationFrame(() => {
+      enteringView.classList.add("entering-active");
+    });
+
+    await new Promise((resolve) => window.setTimeout(resolve, 280));
+    enteringView.classList.remove("entering", "entering-active");
+  }
+
   isViewTransitioning = false;
 }
 
