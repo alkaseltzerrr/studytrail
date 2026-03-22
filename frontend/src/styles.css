@@ -58,6 +58,27 @@ body {
   padding: 18px 14px 28px;
   display: grid;
   gap: 14px;
+  transition: transform 0.14s ease, opacity 0.14s ease;
+}
+
+.app-shell.soft-switch {
+  opacity: 0.92;
+  transform: translateY(2px);
+}
+
+.app-shell.soft-enter {
+  animation: subtle-enter 0.16s ease;
+}
+
+@keyframes subtle-enter {
+  from {
+    opacity: 0.9;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .surface {
@@ -136,6 +157,16 @@ h2 {
 
 .view.active {
   display: grid;
+  animation: quick-fade 0.14s ease;
+}
+
+@keyframes quick-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .home-hero {
