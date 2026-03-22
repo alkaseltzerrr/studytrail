@@ -81,7 +81,6 @@ const days: Array<keyof DailyHours> = [
 ];
 
 const form = document.getElementById("planner-form") as HTMLFormElement;
-const appShell = document.querySelector(".app-shell") as HTMLElement;
 const weekStartInput = document.getElementById("week_start_date") as HTMLInputElement;
 const dailyHoursGrid = document.getElementById("daily-hours-grid") as HTMLDivElement;
 const taskList = document.getElementById("task-list") as HTMLDivElement;
@@ -117,7 +116,6 @@ const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
 let isGeneratingPlan = false;
-let isNavigatingView = false;
 let currentView: AppView = "home";
 
 for (const day of days) {
@@ -158,31 +156,11 @@ function switchView(view: AppView): void {
   currentView = view;
 }
 
-function delay(milliseconds: number): Promise<void> {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, milliseconds);
-  });
-}
-
-async function animateToView(view: AppView): Promise<void> {
-  if (isNavigatingView || view === currentView) {
+function animateToView(view: AppView): void {
+  if (view === currentView) {
     return;
   }
-
-  isNavigatingView = true;
-  appShell.classList.add("route-out");
-  await delay(170);
-
   switchView(view);
-
-  appShell.classList.remove("route-out");
-  appShell.classList.remove("route-in");
-  void appShell.offsetWidth;
-  appShell.classList.add("route-in");
-
-  await delay(260);
-  appShell.classList.remove("route-in");
-  isNavigatingView = false;
 }
 
 function getDefaultWeekStartDate(): string {
@@ -528,7 +506,7 @@ async function requestPlan(): Promise<void> {
 
     selectedDateFilter = null;
     renderPlan((await response.json()) as StudyPlanResponse);
-    await animateToView("output");
+    animateToView("output");
   } catch (error) {
     latestPlanResponse = null;
     selectedDateFilter = null;
@@ -595,23 +573,23 @@ renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
 switchView("home");
 
 navHome.addEventListener("click", () => {
-  void animateToView("home");
+  animateToView("home");
 });
 navPlanner.addEventListener("click", () => {
-  void animateToView("planner");
+  animateToView("planner");
 });
 navOutput.addEventListener("click", () => {
   if (!navOutput.disabled) {
-    void animateToView("output");
+    animateToView("output");
   }
 });
 
 goCreate.addEventListener("click", () => {
-  void animateToView("planner");
+  animateToView("planner");
 });
 goOutput.addEventListener("click", () => {
   if (!goOutput.disabled) {
-    void animateToView("output");
+    animateToView("output");
   }
 });
 
