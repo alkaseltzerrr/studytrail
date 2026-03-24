@@ -4,6 +4,7 @@ type AppView = "home" | "planner" | "output";
 type StudyStyle = "more_practice" | "more_theory" | "balanced";
 type TaskType = "exam" | "assignment" | "project" | "quiz";
 type ActivityType = "theory" | "practice" | "review" | "test";
+type ThemeMode = "light" | "dark";
 
 type DailyHours = {
   monday: number;
@@ -92,6 +93,7 @@ const navPlanner = document.getElementById("nav-planner") as HTMLButtonElement;
 const navOutput = document.getElementById("nav-output") as HTMLButtonElement;
 const goCreate = document.getElementById("go-create") as HTMLButtonElement;
 const goOutput = document.getElementById("go-output") as HTMLButtonElement;
+const themeToggle = document.getElementById("theme-toggle") as HTMLButtonElement;
 
 const homeView = document.getElementById("view-home") as HTMLElement;
 const plannerView = document.getElementById("view-planner") as HTMLElement;
@@ -118,6 +120,31 @@ let selectedDateFilter: string | null = null;
 let isGeneratingPlan = false;
 let currentView: AppView = "home";
 let isViewTransitioning = false;
+
+const themeStorageKey = "studytrail-theme";
+
+function getSystemTheme(): ThemeMode {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(mode: ThemeMode): void {
+  document.documentElement.setAttribute("data-theme", mode);
+  themeToggle.textContent = mode === "dark" ? "Light Mode" : "Dark Mode";
+  themeToggle.setAttribute("aria-pressed", String(mode === "dark"));
+}
+
+function initializeTheme(): void {
+  const savedTheme = localStorage.getItem(themeStorageKey);
+  const initialTheme: ThemeMode = savedTheme === "dark" || savedTheme === "light" ? savedTheme : getSystemTheme();
+  applyTheme(initialTheme);
+}
+
+function toggleTheme(): void {
+  const currentTheme = (document.documentElement.getAttribute("data-theme") as ThemeMode | null) ?? "light";
+  const nextTheme: ThemeMode = currentTheme === "dark" ? "light" : "dark";
+  localStorage.setItem(themeStorageKey, nextTheme);
+  applyTheme(nextTheme);
+}
 
 for (const day of days) {
   const wrap = document.createElement("label");
@@ -198,6 +225,9 @@ function getDefaultWeekStartDate(): string {
   monday.setDate(now.getDate() + (day === 1 ? 0 : diffToMonday));
   return monday.toISOString().slice(0, 10);
 }
+
+initializeTheme();
+themeToggle.addEventListener("click", toggleTheme);
 
 function getApiBaseUrl(): string {
   const { hostname } = window.location;

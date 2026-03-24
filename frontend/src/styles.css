@@ -4,15 +4,76 @@
   --bg: #ecf2f1;
   --surface: #f8fbfa;
   --surface-soft: #ecf4f2;
+  --surface-strong: #f6fbfa;
   --text: #152126;
   --text-muted: #607883;
+  --text-soft: #29424a;
   --line: #cfe1dd;
   --accent: #6f8fe6;
+  --accent-soft: #86a4ed;
   --accent-ink: #2e4a96;
+  --status-bg: #ecf3ff;
+  --status-line: #d4e4fd;
+  --status-text: #2f4f7f;
+  --calendar-bg: linear-gradient(180deg, #e7f2ef, #e0f0ec);
+  --calendar-nav-bg: #eef8f4;
+  --calendar-nav-line: #b8d6d0;
+  --calendar-day-bg: #edf6f3;
+  --calendar-day-line: #bdd9d4;
+  --calendar-day-plan-bg: #d9ece7;
+  --calendar-day-plan-line: #9fcfc6;
+  --calendar-day-selected-bg: #c4e0d9;
+  --calendar-day-selected-line: #74aea3;
+  --calendar-day-today-bg: #cad7fa;
+  --calendar-day-today-line: #8ca5e5;
+  --calendar-day-today-text: #213f88;
+  --pill-bg: linear-gradient(160deg, #f8fcfb, #ecf5f4);
+  --day-card-bg: linear-gradient(180deg, #f8fbfa, #eef5f4);
+  --session-bg: #f8fcfb;
+  --session-line: #d7e6e2;
+  --preview-bg: #f3f9f8;
   --mint: #d8ebe6;
   --mint-strong: #bad8d1;
   --danger: #c04a62;
   --shadow: 0 16px 42px rgba(34, 62, 77, 0.14);
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f161a;
+  --surface: #162127;
+  --surface-soft: #1b2a30;
+  --surface-strong: #1f2f36;
+  --text: #e4eef2;
+  --text-muted: #9ab1ba;
+  --text-soft: #c7d8df;
+  --line: #2a3c44;
+  --accent: #7ea0ff;
+  --accent-soft: #668ce8;
+  --accent-ink: #c8d7ff;
+  --status-bg: #1c2737;
+  --status-line: #304660;
+  --status-text: #bfd4ff;
+  --calendar-bg: linear-gradient(180deg, #1a2a2f, #17242a);
+  --calendar-nav-bg: #203138;
+  --calendar-nav-line: #33515d;
+  --calendar-day-bg: #1f3138;
+  --calendar-day-line: #35525d;
+  --calendar-day-plan-bg: #233b40;
+  --calendar-day-plan-line: #4f7c83;
+  --calendar-day-selected-bg: #294850;
+  --calendar-day-selected-line: #6fa6b0;
+  --calendar-day-today-bg: #253558;
+  --calendar-day-today-line: #5479c6;
+  --calendar-day-today-text: #dbe6ff;
+  --pill-bg: linear-gradient(160deg, #1b2b31, #1a262d);
+  --day-card-bg: linear-gradient(180deg, #1a2a30, #17262c);
+  --session-bg: #1b2b30;
+  --session-line: #2f4a54;
+  --preview-bg: #1a2c31;
+  --mint: #29413b;
+  --mint-strong: #355950;
+  --danger: #e38799;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -23,8 +84,8 @@ body {
   margin: 0;
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at 8% 4%, #dce8f8 0%, transparent 36%),
-    radial-gradient(circle at 95% 90%, #d5ece4 0%, transparent 35%),
+  background: radial-gradient(circle at 8% 4%, color-mix(in oklab, var(--accent) 25%, transparent) 0%, transparent 36%),
+    radial-gradient(circle at 95% 90%, color-mix(in oklab, var(--mint) 60%, transparent) 0%, transparent 35%),
     var(--bg);
   min-height: 100vh;
 }
@@ -41,7 +102,7 @@ body {
   height: 260px;
   right: -82px;
   top: -64px;
-  background: linear-gradient(135deg, #c9d8fd, #c9ece1);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--accent) 35%, white), color-mix(in oklab, var(--mint) 70%, white));
 }
 
 .bg-shape-bottom {
@@ -49,7 +110,7 @@ body {
   height: 300px;
   left: -96px;
   bottom: -120px;
-  background: linear-gradient(140deg, #d4f0e9, #efdae3);
+  background: linear-gradient(140deg, color-mix(in oklab, var(--mint) 80%, white), color-mix(in oklab, var(--danger) 25%, white));
 }
 
 .app-shell {
@@ -61,8 +122,8 @@ body {
 }
 
 .surface {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 251, 249, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, white), color-mix(in oklab, var(--surface-strong) 92%, black));
+  border: 1px solid color-mix(in oklab, var(--line) 58%, white);
   border-radius: 26px;
   box-shadow: var(--shadow);
 }
@@ -112,16 +173,25 @@ h2 {
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--surface-soft);
-  color: #29424a;
+  color: var(--text-soft);
   font-weight: 700;
   padding: 9px 14px;
   cursor: pointer;
 }
 
 .menu-btn.active {
-  background: linear-gradient(125deg, var(--accent), #86a4ed);
+  background: linear-gradient(125deg, var(--accent), var(--accent-soft));
   border-color: transparent;
   color: #fff;
+}
+
+.theme-toggle {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-weight: 800;
+  padding: 9px 14px;
 }
 
 .menu-btn:disabled {
@@ -210,7 +280,7 @@ h2 {
 
 .preview-item {
   border: 1px solid var(--line);
-  background: #f3f9f8;
+  background: var(--preview-bg);
   border-radius: 16px;
   padding: 10px;
 }
@@ -259,7 +329,7 @@ h2 {
   display: grid;
   gap: 7px;
   font-weight: 700;
-  color: #2b3f47;
+  color: var(--text-soft);
 }
 
 .input-group {
@@ -311,7 +381,7 @@ button:focus {
 }
 
 .day-hours {
-  background: linear-gradient(180deg, #f4f9f8, #edf4f3);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface-soft) 75%, white), color-mix(in oklab, var(--surface-soft) 95%, black));
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 8px;
@@ -404,7 +474,7 @@ button:active {
 }
 
 button.primary {
-  background: linear-gradient(130deg, var(--accent), #86a5f0);
+  background: linear-gradient(130deg, var(--accent), var(--accent-soft));
   border: none;
   color: #fff;
 }
@@ -436,7 +506,7 @@ button.small {
   min-width: 94px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: linear-gradient(160deg, #f8fcfb, #ecf5f4);
+  background: var(--pill-bg);
   padding: 7px 10px;
   text-align: center;
 }
@@ -457,15 +527,15 @@ button.small {
   margin: 12px 0 10px;
   padding: 10px;
   border-radius: 12px;
-  background: #ecf3ff;
-  border: 1px solid #d4e4fd;
-  color: #2f4f7f;
+  background: var(--status-bg);
+  border: 1px solid var(--status-line);
+  color: var(--status-text);
   font-weight: 700;
 }
 
 .mini-calendar {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, #e7f2ef, #e0f0ec);
+  background: var(--calendar-bg);
   border-radius: 18px;
   padding: 10px;
   margin-bottom: 12px;
@@ -481,7 +551,7 @@ button.small {
 .mini-calendar-head p {
   margin: 0;
   font-weight: 800;
-  color: #2c4a53;
+  color: var(--text-soft);
 }
 
 .mini-calendar-nav {
@@ -495,8 +565,8 @@ button.small {
   border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid #b8d6d0;
-  background: #eef8f4;
+  border: 1px solid var(--calendar-nav-line);
+  background: var(--calendar-nav-bg);
 }
 
 .mini-calendar-week {
@@ -507,8 +577,8 @@ button.small {
 
 .mini-day {
   border-radius: 999px;
-  border: 1px solid #bdd9d4;
-  background: #edf6f3;
+  border: 1px solid var(--calendar-day-line);
+  background: var(--calendar-day-bg);
   min-height: 56px;
   display: grid;
   place-items: center;
@@ -554,19 +624,19 @@ button.small {
 }
 
 .mini-day.has-plan {
-  background: #d9ece7;
-  border-color: #9fcfc6;
+  background: var(--calendar-day-plan-bg);
+  border-color: var(--calendar-day-plan-line);
 }
 
 .mini-day.selected {
-  background: #c4e0d9;
-  border-color: #74aea3;
+  background: var(--calendar-day-selected-bg);
+  border-color: var(--calendar-day-selected-line);
 }
 
 .mini-day.today {
-  background: #cad7fa;
-  border-color: #8ca5e5;
-  color: #213f88;
+  background: var(--calendar-day-today-bg);
+  border-color: var(--calendar-day-today-line);
+  color: var(--calendar-day-today-text);
 }
 
 .mini-calendar-hint {
@@ -601,7 +671,7 @@ button.small {
 
 .day-card {
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, #f8fbfa, #eef5f4);
+  background: var(--day-card-bg);
   border-radius: 18px;
   padding: 12px;
 }
@@ -640,8 +710,8 @@ button.small {
   justify-content: space-between;
   gap: 10px;
   border-radius: 12px;
-  border: 1px solid #d7e6e2;
-  background: #f8fcfb;
+  border: 1px solid var(--session-line);
+  background: var(--session-bg);
   padding: 9px;
 }
 
@@ -760,10 +830,14 @@ button.small {
   .menu-nav {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .menu-btn {
+    width: 100%;
+  }
+
+  .theme-toggle {
     width: 100%;
   }
 
