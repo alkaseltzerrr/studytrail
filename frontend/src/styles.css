@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap");
 
 :root {
+  color-scheme: light;
   --bg: #ecf2f1;
   --surface: #f8fbfa;
   --surface-soft: #ecf4f2;
@@ -31,6 +32,8 @@
   --day-card-bg: linear-gradient(180deg, #f8fbfa, #eef5f4);
   --session-bg: #f8fcfb;
   --session-line: #d7e6e2;
+  --task-row-bg: #f6fbfa;
+  --task-row-line: #d7e6e2;
   --preview-bg: #f3f9f8;
   --mint: #d8ebe6;
   --mint-strong: #bad8d1;
@@ -39,6 +42,7 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0f161a;
   --surface: #162127;
   --surface-soft: #1b2a30;
@@ -46,7 +50,7 @@
   --text: #e4eef2;
   --text-muted: #9ab1ba;
   --text-soft: #c7d8df;
-  --line: #2a3c44;
+  --line: #24353d;
   --accent: #7ea0ff;
   --accent-soft: #668ce8;
   --accent-ink: #c8d7ff;
@@ -69,6 +73,8 @@
   --day-card-bg: linear-gradient(180deg, #1a2a30, #17262c);
   --session-bg: #1b2b30;
   --session-line: #2f4a54;
+  --task-row-bg: #14242b;
+  --task-row-line: #28414b;
   --preview-bg: #1a2c31;
   --mint: #29413b;
   --mint-strong: #355950;
@@ -123,7 +129,7 @@ body {
 
 .surface {
   background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, white), color-mix(in oklab, var(--surface-strong) 92%, black));
-  border: 1px solid color-mix(in oklab, var(--line) 58%, white);
+  border: 1px solid color-mix(in oklab, var(--line) 85%, var(--surface));
   border-radius: 26px;
   box-shadow: var(--shadow);
 }
@@ -476,8 +482,8 @@ button:focus {
   display: grid;
   grid-template-columns: 1fr 1fr 132px 80px 110px 1fr 88px;
   gap: 7px;
-  border: 1px solid var(--line);
-  background: #f6fbfa;
+  border: 1px solid var(--task-row-line);
+  background: var(--task-row-bg);
   border-radius: 14px;
   padding: 8px;
 }
