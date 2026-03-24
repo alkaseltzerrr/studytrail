@@ -693,6 +693,48 @@ button.small {
   font-weight: 600;
 }
 
+.output-filters {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.filter-group {
+  display: grid;
+  gap: 7px;
+}
+
+.filter-label {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.filter-tag {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.filter-tag.active {
+  background: linear-gradient(130deg, var(--accent), var(--accent-soft));
+  border-color: transparent;
+  color: #fff;
+}
+
 .heuristics {
   display: flex;
   gap: 7px;

@@ -113,11 +113,15 @@ const miniCalendarMonth = document.getElementById("mini-calendar-month") as HTML
 const miniCalendarWeek = document.getElementById("mini-calendar-week") as HTMLDivElement;
 const weekPrevButton = document.getElementById("week-prev") as HTMLButtonElement;
 const weekNextButton = document.getElementById("week-next") as HTMLButtonElement;
+const subjectTags = document.getElementById("subject-tags") as HTMLDivElement;
+const activityTags = document.getElementById("activity-tags") as HTMLDivElement;
 const heuristicsBox = document.getElementById("heuristics") as HTMLDivElement;
 const scheduleGrid = document.getElementById("schedule-grid") as HTMLDivElement;
 
 let latestPlanResponse: StudyPlanResponse | null = null;
 let selectedDateFilter: string | null = null;
+let selectedSubjectFilters = new Set<string>();
+let selectedActivityFilters = new Set<ActivityType>();
 let isGeneratingPlan = false;
 let currentView: AppView = "home";
 let isViewTransitioning = false;
@@ -345,6 +349,80 @@ function activityLabel(activityType: ActivityType): string {
   return "Test";
 }
 
+function createFilterTag(label: string, isActive: boolean, onClick: () => void): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `filter-tag${isActive ? " active" : ""}`;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderOutputFilters(response: StudyPlanResponse): void {
+  const uniqueSubjects = Array.from(new Set(response.schedule.map((entry) => entry.subject))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  const uniqueActivities = ["theory", "practice", "review", "test"].filter((activity) =>
+    response.schedule.some((entry) => entry.activity_type === activity),
+  ) as ActivityType[];
+
+  selectedSubjectFilters = new Set(Array.from(selectedSubjectFilters).filter((subject) => uniqueSubjects.includes(subject)));
+  selectedActivityFilters = new Set(
+    Array.from(selectedActivityFilters).filter((activity) => uniqueActivities.includes(activity)),
+  );
+
+  subjectTags.innerHTML = "";
+  activityTags.innerHTML = "";
+
+  subjectTags.appendChild(
+    createFilterTag("All subjects", selectedSubjectFilters.size === 0, () => {
+      selectedSubjectFilters.clear();
+      if (latestPlanResponse) {
+        renderPlan(latestPlanResponse);
+      }
+    }),
+  );
+
+  for (const subject of uniqueSubjects) {
+    subjectTags.appendChild(
+      createFilterTag(subject, selectedSubjectFilters.has(subject), () => {
+        if (selectedSubjectFilters.has(subject)) {
+          selectedSubjectFilters.delete(subject);
+        } else {
+          selectedSubjectFilters.add(subject);
+        }
+        if (latestPlanResponse) {
+          renderPlan(latestPlanResponse);
+        }
+      }),
+    );
+  }
+
+  activityTags.appendChild(
+    createFilterTag("All types", selectedActivityFilters.size === 0, () => {
+      selectedActivityFilters.clear();
+      if (latestPlanResponse) {
+        renderPlan(latestPlanResponse);
+      }
+    }),
+  );
+
+  for (const activity of uniqueActivities) {
+    activityTags.appendChild(
+      createFilterTag(activityLabel(activity), selectedActivityFilters.has(activity), () => {
+        if (selectedActivityFilters.has(activity)) {
+          selectedActivityFilters.delete(activity);
+        } else {
+          selectedActivityFilters.add(activity);
+        }
+        if (latestPlanResponse) {
+          renderPlan(latestPlanResponse);
+        }
+      }),
+    );
+  }
+}
+
 function addDays(base: Date, daysToAdd: number): Date {
   const next = new Date(base);
   next.setDate(base.getDate() + daysToAdd);
@@ -448,8 +526,16 @@ function renderPlan(response: StudyPlanResponse): void {
   latestPlanResponse = response;
   scheduleGrid.innerHTML = "";
 
+  renderOutputFilters(response);
+
+  const tagFilteredEntries = response.schedule.filter((entry) => {
+    const subjectMatch = selectedSubjectFilters.size === 0 || selectedSubjectFilters.has(entry.subject);
+    const activityMatch = selectedActivityFilters.size === 0 || selectedActivityFilters.has(entry.activity_type);
+    return subjectMatch && activityMatch;
+  });
+
   const grouped = new Map<string, PlanEntry[]>();
-  for (const entry of response.schedule) {
+  for (const entry of tagFilteredEntries) {
     if (!grouped.has(entry.date)) {
       grouped.set(entry.date, []);
     }
@@ -469,6 +555,9 @@ function renderPlan(response: StudyPlanResponse): void {
   renderMiniCalendar(response.week_start_date, new Set(dates), counts, selectedDateFilter);
 
   const visibleDates = selectedDateFilter ? dates.filter((date) => date === selectedDateFilter) : dates;
+  const visibleEntries = selectedDateFilter
+    ? tagFilteredEntries.filter((entry) => entry.date === selectedDateFilter)
+    : tagFilteredEntries;
 
   for (const date of visibleDates) {
     const entries = grouped.get(date) ?? [];
@@ -507,16 +596,21 @@ function renderPlan(response: StudyPlanResponse): void {
     scheduleGrid.appendChild(dayCard);
   }
 
-  summaryTotal.textContent = `${response.summary.total_minutes} min`;
-  summaryReviews.textContent = String(response.summary.review_sessions);
+  const filteredTotalMinutes = visibleEntries.reduce((sum, entry) => sum + entry.minutes, 0);
+  const filteredReviews = visibleEntries.filter((entry) => entry.activity_type === "review").length;
+
+  summaryTotal.textContent = `${filteredTotalMinutes} min`;
+  summaryReviews.textContent = String(filteredReviews);
   heuristicsBox.innerHTML = response.summary.heuristics_used
     .map((heuristic) => `<span class="heuristic-pill">${heuristic}</span>`)
     .join("");
 
+  const hasTagFilter = selectedSubjectFilters.size > 0 || selectedActivityFilters.size > 0;
+
   if (selectedDateFilter) {
-    statusBox.textContent = `Showing ${grouped.get(selectedDateFilter)?.length ?? 0} sessions on ${selectedDateFilter}.`;
+    statusBox.textContent = `Showing ${grouped.get(selectedDateFilter)?.length ?? 0} sessions on ${selectedDateFilter}${hasTagFilter ? " with selected tags" : ""}.`;
   } else {
-    statusBox.textContent = `Generated ${response.schedule.length} sessions from ${response.week_start_date} to ${response.week_end_date}.`;
+    statusBox.textContent = `Showing ${visibleEntries.length} sessions from ${response.week_start_date} to ${response.week_end_date}${hasTagFilter ? " with selected tags" : ""}.`;
   }
 
   updateHomeWidgets(response);
