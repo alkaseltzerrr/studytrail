@@ -13,6 +13,7 @@
   --accent: #6f8fe6;
   --accent-soft: #86a4ed;
   --accent-ink: #2e4a96;
+  --focus-ring: rgba(111, 143, 230, 0.24);
   --status-bg: #ecf3ff;
   --status-line: #d4e4fd;
   --status-text: #2f4f7f;
@@ -43,43 +44,44 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f161a;
-  --surface: #162127;
-  --surface-soft: #1b2a30;
-  --surface-strong: #1f2f36;
-  --text: #e4eef2;
-  --text-muted: #9ab1ba;
-  --text-soft: #c7d8df;
-  --line: #24353d;
-  --accent: #7ea0ff;
-  --accent-soft: #668ce8;
-  --accent-ink: #c8d7ff;
-  --status-bg: #1c2737;
-  --status-line: #304660;
-  --status-text: #bfd4ff;
-  --calendar-bg: linear-gradient(180deg, #1a2a2f, #17242a);
-  --calendar-nav-bg: #203138;
-  --calendar-nav-line: #33515d;
-  --calendar-day-bg: #1f3138;
-  --calendar-day-line: #35525d;
-  --calendar-day-plan-bg: #233b40;
-  --calendar-day-plan-line: #4f7c83;
-  --calendar-day-selected-bg: #294850;
-  --calendar-day-selected-line: #6fa6b0;
-  --calendar-day-today-bg: #253558;
-  --calendar-day-today-line: #5479c6;
-  --calendar-day-today-text: #dbe6ff;
-  --pill-bg: linear-gradient(160deg, #1b2b31, #1a262d);
-  --day-card-bg: linear-gradient(180deg, #1a2a30, #17262c);
-  --session-bg: #1b2b30;
-  --session-line: #2f4a54;
-  --task-row-bg: #14242b;
-  --task-row-line: #28414b;
-  --preview-bg: #1a2c31;
-  --mint: #29413b;
-  --mint-strong: #355950;
-  --danger: #e38799;
-  --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  --bg: #14110f;
+  --surface: #1f1a16;
+  --surface-soft: #25201b;
+  --surface-strong: #2a241f;
+  --text: #efe4d8;
+  --text-muted: #b9a997;
+  --text-soft: #d3c5b5;
+  --line: #3a2f27;
+  --accent: #c98a56;
+  --accent-soft: #b77a4c;
+  --accent-ink: #f2c9a4;
+  --focus-ring: rgba(201, 138, 86, 0.28);
+  --status-bg: #2a221b;
+  --status-line: #4a3b2f;
+  --status-text: #e8c7aa;
+  --calendar-bg: linear-gradient(180deg, #221c17, #1c1713);
+  --calendar-nav-bg: #2a221b;
+  --calendar-nav-line: #47392e;
+  --calendar-day-bg: #28211b;
+  --calendar-day-line: #46382d;
+  --calendar-day-plan-bg: #31271f;
+  --calendar-day-plan-line: #67503c;
+  --calendar-day-selected-bg: #3a2d22;
+  --calendar-day-selected-line: #806146;
+  --calendar-day-today-bg: #3c2b20;
+  --calendar-day-today-line: #a17650;
+  --calendar-day-today-text: #f5d8bf;
+  --pill-bg: linear-gradient(160deg, #2a231d, #221c17);
+  --day-card-bg: linear-gradient(180deg, #272019, #211b16);
+  --session-bg: #28211b;
+  --session-line: #44362c;
+  --task-row-bg: #261f19;
+  --task-row-line: #403329;
+  --preview-bg: #251f19;
+  --mint: #4a3a2c;
+  --mint-strong: #5e4b39;
+  --danger: #df8b72;
+  --shadow: 0 20px 52px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -417,7 +419,7 @@ input:focus,
 select:focus,
 textarea:focus,
 button:focus {
-  outline: 3px solid rgba(111, 143, 230, 0.24);
+  outline: 3px solid var(--focus-ring);
   border-color: var(--accent);
 }
 
