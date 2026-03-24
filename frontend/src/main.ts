@@ -94,6 +94,7 @@ const navOutput = document.getElementById("nav-output") as HTMLButtonElement;
 const goCreate = document.getElementById("go-create") as HTMLButtonElement;
 const goOutput = document.getElementById("go-output") as HTMLButtonElement;
 const themeToggle = document.getElementById("theme-toggle") as HTMLButtonElement;
+const themeToggleText = document.getElementById("theme-toggle-text") as HTMLSpanElement;
 
 const homeView = document.getElementById("view-home") as HTMLElement;
 const plannerView = document.getElementById("view-planner") as HTMLElement;
@@ -129,8 +130,11 @@ function getSystemTheme(): ThemeMode {
 
 function applyTheme(mode: ThemeMode): void {
   document.documentElement.setAttribute("data-theme", mode);
-  themeToggle.textContent = mode === "dark" ? "Light Mode" : "Dark Mode";
+  const actionLabel = mode === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  themeToggle.setAttribute("aria-label", actionLabel);
+  themeToggle.setAttribute("title", actionLabel);
   themeToggle.setAttribute("aria-pressed", String(mode === "dark"));
+  themeToggleText.textContent = actionLabel;
 }
 
 function initializeTheme(): void {

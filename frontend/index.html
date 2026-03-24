@@ -21,8 +21,15 @@
           <button type="button" id="nav-planner" class="menu-btn">Create Plan</button>
           <button type="button" id="nav-output" class="menu-btn" disabled>Plan Output</button>
         </nav>
-        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark and light mode">
-          Dark Mode
+        <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M21 13a9 9 0 1 1-10-10 7 7 0 1 0 10 10z"></path>
+          </svg>
+          <span class="sr-only" id="theme-toggle-text">Toggle theme</span>
         </button>
       </header>
 
