@@ -1,22 +1,13 @@
 
 # StudyTrail
 
+> **Status: Still Under Development**
+>
+> Features and UI are actively evolving. Expect ongoing updates and occasional breaking changes.
+
 **Personalized AI-powered study planner**
 
 StudyTrail helps students organize their study time efficiently by generating tailored weekly plans based on deadlines, subject importance, and personal study preferences. It combines rule-based logic and heuristics to maximize productivity and reduce stress.
-
----
-
-## Still Under Development
-
-This project is actively being improved and may include unfinished features or UI changes.
-
-Current status:
-
-- Core planning workflow is working (input -> generate -> weekly output)
-- Backend API and schema-based request/response are implemented
-- Frontend supports navigation and dark/light mode
-- Additional validation, polish, and feature expansion are in progress
 
 ---
 
