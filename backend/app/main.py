@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 from math import ceil
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Dict, List, Literal, Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class StudyStyle(str, Enum):
@@ -63,6 +64,34 @@ class StudyPlanRequest(BaseModel):
     tasks: List[StudyTaskInput] = Field(min_length=1)
     study_style: StudyStyle
     max_session_minutes: int = Field(default=90, ge=30, le=180)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as error:
+            raise ValueError("timezone must be a valid IANA timezone") from error
+        return value
+
+    @model_validator(mode="after")
+    def validate_task_subjects(self) -> "StudyPlanRequest":
+        subject_names = {subject.name.strip().casefold() for subject in self.subjects}
+        missing_subjects = sorted(
+            {
+                task.subject
+                for task in self.tasks
+                if task.subject.strip().casefold() not in subject_names
+            }
+        )
+
+        if missing_subjects:
+            raise ValueError(
+                "Each task.subject must match a subject in subjects. "
+                f"Unknown task subjects: {', '.join(missing_subjects)}"
+            )
+
+        return self
 
 
 class PlanEntry(BaseModel):
@@ -134,10 +163,15 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
     week_dates = [payload.week_start_date + timedelta(days=i) for i in range(7)]
     capacities = _daily_capacity_minutes(payload.daily_hours)
     subject_importance = {subject.name: subject.importance for subject in payload.subjects}
+    local_today = datetime.now(ZoneInfo(payload.timezone)).date()
+    planning_anchor_date = payload.week_start_date if payload.week_start_date > local_today else local_today
+    schedulable_day_indexes = [
+        index for index, current_date in enumerate(week_dates) if current_date >= local_today and capacities[index] >= 15
+    ]
 
     weighted_chunks = []
     for task in payload.tasks:
-        due_in_days = max((task.due_date - payload.week_start_date).days, 0)
+        due_in_days = max((task.due_date - planning_anchor_date).days, 0)
         urgency = 1 / (1 + due_in_days)
         importance = subject_importance.get(task.subject, 3)
         sessions = max(1, ceil(task.estimated_total_minutes / payload.max_session_minutes))
@@ -167,10 +201,14 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
         assigned = False
         days_before_due = [
             i
-            for i, current_date in enumerate(week_dates)
-            if current_date <= chunk["due_date"] and capacities[i] >= 15
+            for i in schedulable_day_indexes
+            if week_dates[i] <= chunk["due_date"] and capacities[i] >= 15
         ]
-        candidate_days = days_before_due if days_before_due else [i for i in range(7) if capacities[i] >= 15]
+        candidate_days = (
+            days_before_due
+            if days_before_due
+            else [i for i in schedulable_day_indexes if capacities[i] >= 15]
+        )
 
         for day_index in candidate_days:
             alloc = min(chunk["minutes"], capacities[day_index])
@@ -198,6 +236,9 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
 
     review_count = 0
     for day_index, current_date in enumerate(week_dates):
+        if current_date < local_today:
+            continue
+
         if capacities[day_index] < 20:
             continue
 
@@ -242,6 +283,7 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
                 "Subject importance multiplier",
                 "Chunking tasks into max-session blocks",
                 "Spaced review sessions near due dates",
+                "Timezone-aware scheduling based on user's local date",
             ],
         ),
     )
