@@ -75,3 +75,33 @@ def test_create_plan_happy_path(valid_payload: dict[str, Any]) -> None:
     data = response.json()
     validate(instance=data, schema=load_output_schema())
     assert len(data["schedule"]) > 0
+
+
+def test_create_plan_rejects_unknown_task_subject(valid_payload: dict[str, Any]) -> None:
+    payload = clone_payload(valid_payload)
+    payload["tasks"][0]["subject"] = "Physics"
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 422
+
+
+def test_create_plan_rejects_invalid_timezone(valid_payload: dict[str, Any]) -> None:
+    payload = clone_payload(valid_payload)
+    payload["timezone"] = "Mars/Olympus_Mons"
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("max_minutes", [29, 181])
+def test_create_plan_rejects_invalid_max_session_minutes(
+    valid_payload: dict[str, Any], max_minutes: int
+) -> None:
+    payload = clone_payload(valid_payload)
+    payload["max_session_minutes"] = max_minutes
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 422
