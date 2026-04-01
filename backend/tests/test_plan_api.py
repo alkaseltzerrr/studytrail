@@ -305,3 +305,60 @@ def test_uses_week_start_when_it_is_after_local_today(
     data = response.json()
     core_dates = [item["date"] for item in data["schedule"] if item["notes"] == "Core task block"]
     assert core_dates == ["2099-01-12"]
+
+
+def test_deterministic_summary_snapshot(
+    valid_payload: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = clone_payload(valid_payload)
+    payload["timezone"] = "UTC"
+    payload["week_start_date"] = "2099-01-05"
+    payload["daily_hours"] = {
+        "monday": 2,
+        "tuesday": 2,
+        "wednesday": 2,
+        "thursday": 2,
+        "friday": 2,
+        "saturday": 2,
+        "sunday": 2,
+    }
+    payload["subjects"] = [
+        {"name": "Algorithms", "importance": 5},
+        {"name": "Databases", "importance": 4},
+    ]
+    payload["tasks"] = [
+        {
+            "subject": "Algorithms",
+            "title": "Midterm prep",
+            "topic": "Graphs + DP",
+            "due_date": "2099-01-09",
+            "estimated_total_minutes": 180,
+            "task_type": "exam",
+        },
+        {
+            "subject": "Databases",
+            "title": "Assignment 2",
+            "topic": "Normalization",
+            "due_date": "2099-01-10",
+            "estimated_total_minutes": 120,
+            "task_type": "assignment",
+        },
+    ]
+    payload["max_session_minutes"] = 90
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):  # type: ignore[override]
+            return cls(2099, 1, 5, 8, 0, 0, tzinfo=tz)
+
+    monkeypatch.setattr(planner_main, "datetime", FixedDateTime)
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["summary"]["total_minutes"] == 420
+    assert data["summary"]["minutes_by_subject"] == {
+        "Algorithms": 270,
+        "Databases": 150,
+    }
