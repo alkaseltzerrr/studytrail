@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -7,6 +8,7 @@ import pytest
 from jsonschema import validate
 from fastapi.testclient import TestClient
 
+import app.main as planner_main
 from app.main import app
 
 
@@ -218,3 +220,88 @@ def test_review_sessions_added_near_due_dates(valid_payload: dict[str, Any]) -> 
     review_entries = [item for item in data["schedule"] if item["activity_type"] == "review"]
     assert data["summary"]["review_sessions"] > 0
     assert len(review_entries) > 0
+
+
+def test_skips_past_days_when_week_start_is_before_local_today(
+    valid_payload: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = clone_payload(valid_payload)
+    payload["timezone"] = "UTC"
+    payload["week_start_date"] = "2099-01-05"
+    payload["daily_hours"] = {
+        "monday": 2,
+        "tuesday": 2,
+        "wednesday": 2,
+        "thursday": 2,
+        "friday": 2,
+        "saturday": 2,
+        "sunday": 2,
+    }
+    payload["subjects"] = [{"name": "Algorithms", "importance": 5}]
+    payload["tasks"] = [
+        {
+            "subject": "Algorithms",
+            "title": "Time-sensitive prep",
+            "topic": "Past-day guard",
+            "due_date": "2099-01-11",
+            "estimated_total_minutes": 120,
+            "task_type": "exam",
+        }
+    ]
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):  # type: ignore[override]
+            return cls(2099, 1, 8, 10, 0, 0, tzinfo=tz)
+
+    monkeypatch.setattr(planner_main, "datetime", FixedDateTime)
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    scheduled_dates = [item["date"] for item in data["schedule"]]
+    assert scheduled_dates
+    assert min(scheduled_dates) >= "2099-01-08"
+
+
+def test_uses_week_start_when_it_is_after_local_today(
+    valid_payload: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = clone_payload(valid_payload)
+    payload["timezone"] = "UTC"
+    payload["week_start_date"] = "2099-01-12"
+    payload["daily_hours"] = {
+        "monday": 2,
+        "tuesday": 0,
+        "wednesday": 0,
+        "thursday": 0,
+        "friday": 0,
+        "saturday": 0,
+        "sunday": 0,
+    }
+    payload["subjects"] = [{"name": "Algorithms", "importance": 5}]
+    payload["tasks"] = [
+        {
+            "subject": "Algorithms",
+            "title": "Future week task",
+            "topic": "Anchor date guard",
+            "due_date": "2099-01-12",
+            "estimated_total_minutes": 60,
+            "task_type": "exam",
+        }
+    ]
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):  # type: ignore[override]
+            return cls(2099, 1, 8, 10, 0, 0, tzinfo=tz)
+
+    monkeypatch.setattr(planner_main, "datetime", FixedDateTime)
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    core_dates = [item["date"] for item in data["schedule"] if item["notes"] == "Core task block"]
+    assert core_dates == ["2099-01-12"]
