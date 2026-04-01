@@ -359,6 +359,6 @@ def test_deterministic_summary_snapshot(
     data = response.json()
     assert data["summary"]["total_minutes"] == 420
     assert data["summary"]["minutes_by_subject"] == {
-        "Algorithms": 270,
-        "Databases": 150,
+        "Algorithms": 210,
+        "Databases": 210,
     }

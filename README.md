@@ -61,6 +61,14 @@ uvicorn app.main:app --reload --port 8000
 
 API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
+### Backend Tests
+
+```bash
+cd backend
+pip install -r requirements.txt
+pytest
+```
+
 
 ### Frontend (TypeScript + Vite)
 
