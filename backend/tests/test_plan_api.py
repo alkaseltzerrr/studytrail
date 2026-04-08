@@ -144,6 +144,47 @@ def test_chunking_respects_max_session_minutes(valid_payload: dict[str, Any]) ->
     assert sum(item["minutes"] for item in subject_entries) == 200
 
 
+def test_flags_overdue_spillover_when_only_post_due_capacity_exists(valid_payload: dict[str, Any]) -> None:
+    payload = clone_payload(valid_payload)
+    payload["week_start_date"] = "2099-01-05"
+    payload["daily_hours"] = {
+        "monday": 1,
+        "tuesday": 0,
+        "wednesday": 0,
+        "thursday": 0,
+        "friday": 0,
+        "saturday": 0,
+        "sunday": 0,
+    }
+    payload["subjects"] = [{"name": "Algorithms", "importance": 5}]
+    payload["tasks"] = [
+        {
+            "subject": "Algorithms",
+            "title": "Already overdue task",
+            "topic": "Deadline edge case",
+            "due_date": "2099-01-04",
+            "estimated_total_minutes": 60,
+            "task_type": "exam",
+        }
+    ]
+    payload["max_session_minutes"] = 60
+
+    response = client.post("/api/plan", json=payload)
+
+    assert response.status_code == 200
+    data = response.json()
+    overdue_entries = [
+        item
+        for item in data["schedule"]
+        if item["subject"] == "Algorithms"
+        and item["notes"]
+        == "Overdue spillover (scheduled after due date due to limited pre-deadline capacity)"
+    ]
+    assert len(overdue_entries) == 1
+    assert overdue_entries[0]["date"] > "2099-01-04"
+    assert overdue_entries[0]["minutes"] == 60
+
+
 def test_urgency_prioritized_when_capacity_is_limited(valid_payload: dict[str, Any]) -> None:
     payload = clone_payload(valid_payload)
     payload["week_start_date"] = "2099-01-05"

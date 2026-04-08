@@ -216,6 +216,12 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
                 continue
 
             capacities[day_index] -= alloc
+            is_overdue_spillover = week_dates[day_index] > chunk["due_date"]
+            note = (
+                "Overdue spillover (scheduled after due date due to limited pre-deadline capacity)"
+                if is_overdue_spillover
+                else "Core task block"
+            )
             schedule.append(
                 PlanEntry(
                     date=week_dates[day_index],
@@ -224,7 +230,7 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
                     topic=chunk["topic"],
                     minutes=alloc,
                     activity_type=chunk["activity_type"],
-                    notes="Core task block",
+                    notes=note,
                 )
             )
             minutes_by_subject[chunk["subject"]] += alloc
@@ -283,6 +289,7 @@ def generate_week_plan(payload: StudyPlanRequest) -> StudyPlanResponse:
                 "Subject importance multiplier",
                 "Chunking tasks into max-session blocks",
                 "Spaced review sessions near due dates",
+                "Overdue spillovers explicitly flagged in session notes",
                 "Timezone-aware scheduling based on user's local date",
             ],
         ),
