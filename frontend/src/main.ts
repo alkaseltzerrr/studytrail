@@ -494,6 +494,8 @@ function renderMiniCalendar(
   selectedDate: string | null,
 ): void {
   miniCalendarWeek.innerHTML = "";
+  miniCalendarWeek.setAttribute("role", "group");
+  miniCalendarWeek.setAttribute("aria-label", "Weekly day filters");
 
   const weekStartDate = new Date(`${weekStartDateIso}T00:00:00`);
   miniCalendarMonth.textContent = weekStartDate.toLocaleDateString(undefined, {
@@ -506,7 +508,8 @@ function renderMiniCalendar(
   for (let index = 0; index < 7; index += 1) {
     const current = addDays(weekStartDate, index);
     const currentIso = toIsoDate(current);
-    const dayCell = document.createElement("article");
+    const dayCell = document.createElement("button");
+    dayCell.type = "button";
     dayCell.className = "mini-day";
 
     if (plannedDateSet.has(currentIso)) {
@@ -521,15 +524,35 @@ function renderMiniCalendar(
 
     const sessionCount = sessionCountsByDate.get(currentIso) ?? 0;
     const dotCount = Math.min(3, sessionCount);
-    const dots = Array.from({ length: dotCount })
-      .map(() => `<i class="dot ${sessionIntensityClass(sessionCount)}"></i>`)
-      .join("");
+    const isSelected = currentIso === selectedDate;
+    const hasPlan = plannedDateSet.has(currentIso);
+    const longDate = current.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+    const dayLabel = hasPlan
+      ? `${longDate}, ${sessionCount} session${sessionCount === 1 ? "" : "s"}`
+      : `${longDate}, no sessions`;
+    dayCell.setAttribute("aria-pressed", String(isSelected));
+    dayCell.setAttribute("aria-label", dayLabel);
 
-    dayCell.innerHTML = `
-      <span>${current.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1)}</span>
-      <strong>${current.getDate()}</strong>
-      <small class="dots">${dots}</small>
-    `;
+    const dayInitial = document.createElement("span");
+    dayInitial.textContent = current.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1);
+
+    const dayNumber = document.createElement("strong");
+    dayNumber.textContent = String(current.getDate());
+
+    const dots = document.createElement("small");
+    dots.className = "dots";
+    for (let dotIndex = 0; dotIndex < dotCount; dotIndex += 1) {
+      const dot = document.createElement("i");
+      dot.className = `dot ${sessionIntensityClass(sessionCount)}`;
+      dot.setAttribute("aria-hidden", "true");
+      dots.appendChild(dot);
+    }
+
+    dayCell.append(dayInitial, dayNumber, dots);
 
     dayCell.addEventListener("click", () => {
       selectedDateFilter = selectedDateFilter === currentIso ? null : currentIso;

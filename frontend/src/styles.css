@@ -625,10 +625,14 @@ button.small {
 }
 
 .mini-day {
+  appearance: none;
+  -webkit-appearance: none;
   border-radius: 999px;
   border: 1px solid var(--calendar-day-line);
   background: var(--calendar-day-bg);
   min-height: 56px;
+  width: 100%;
+  padding: 0;
   display: grid;
   place-items: center;
   align-content: center;
