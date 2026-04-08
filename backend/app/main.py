@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 from enum import Enum
 from math import ceil
+import os
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Dict, List, Literal, Optional
 
@@ -126,12 +127,28 @@ class StudyPlanResponse(BaseModel):
     summary: PlanSummary
 
 
+def _cors_configuration() -> tuple[List[str], bool]:
+    default_origins = "http://127.0.0.1:5173,http://localhost:5173"
+    raw_origins = os.getenv("CORS_ALLOW_ORIGINS", default_origins)
+    configured_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
+    if not configured_origins:
+        configured_origins = [origin.strip() for origin in default_origins.split(",")]
+
+    has_wildcard_origin = "*" in configured_origins
+    allow_origins = ["*"] if has_wildcard_origin else configured_origins
+    allow_credentials = not has_wildcard_origin
+    return allow_origins, allow_credentials
+
+
 app = FastAPI(title="StudyTrail Planner API", version="0.1.0")
+
+cors_allow_origins, cors_allow_credentials = _cors_configuration()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=cors_allow_origins,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
