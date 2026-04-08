@@ -268,22 +268,66 @@ function createTaskRow(draft?: Partial<TaskDraft>): void {
   const row = document.createElement("article");
   row.className = "task-row";
 
-  row.innerHTML = `
-    <input type="text" data-field="subject" value="${draft?.subject ?? ""}" placeholder="Subject" required />
-    <input type="text" data-field="title" value="${draft?.title ?? ""}" placeholder="Title" required />
-    <input type="date" data-field="dueDate" value="${draft?.dueDate ?? ""}" required />
-    <input type="number" data-field="minutes" min="30" step="15" value="${draft?.minutes ?? "120"}" required />
-    <select data-field="taskType">
-      <option value="exam" ${draft?.taskType === "exam" ? "selected" : ""}>Exam</option>
-      <option value="assignment" ${draft?.taskType === "assignment" ? "selected" : ""}>Assignment</option>
-      <option value="project" ${draft?.taskType === "project" ? "selected" : ""}>Project</option>
-      <option value="quiz" ${draft?.taskType === "quiz" ? "selected" : ""}>Quiz</option>
-    </select>
-    <input type="text" data-field="topic" value="${draft?.topic ?? ""}" placeholder="Topic" />
-    <button type="button" class="ghost small task-remove" aria-label="Remove task">Remove</button>
-  `;
+  const subjectInput = document.createElement("input");
+  subjectInput.type = "text";
+  subjectInput.dataset.field = "subject";
+  subjectInput.value = draft?.subject ?? "";
+  subjectInput.placeholder = "Subject";
+  subjectInput.required = true;
 
-  const removeButton = row.querySelector(".task-remove") as HTMLButtonElement;
+  const titleInput = document.createElement("input");
+  titleInput.type = "text";
+  titleInput.dataset.field = "title";
+  titleInput.value = draft?.title ?? "";
+  titleInput.placeholder = "Title";
+  titleInput.required = true;
+
+  const dueDateInput = document.createElement("input");
+  dueDateInput.type = "date";
+  dueDateInput.dataset.field = "dueDate";
+  dueDateInput.value = draft?.dueDate ?? "";
+  dueDateInput.required = true;
+
+  const minutesInput = document.createElement("input");
+  minutesInput.type = "number";
+  minutesInput.dataset.field = "minutes";
+  minutesInput.min = "30";
+  minutesInput.step = "15";
+  minutesInput.value = draft?.minutes ?? "120";
+  minutesInput.required = true;
+
+  const taskTypeSelect = document.createElement("select");
+  taskTypeSelect.dataset.field = "taskType";
+  const taskTypeOptions: Array<{ value: TaskType; label: string }> = [
+    { value: "exam", label: "Exam" },
+    { value: "assignment", label: "Assignment" },
+    { value: "project", label: "Project" },
+    { value: "quiz", label: "Quiz" },
+  ];
+  for (const optionConfig of taskTypeOptions) {
+    const option = document.createElement("option");
+    option.value = optionConfig.value;
+    option.textContent = optionConfig.label;
+    if (draft?.taskType === optionConfig.value) {
+      option.selected = true;
+    }
+    taskTypeSelect.appendChild(option);
+  }
+
+  const topicInput = document.createElement("input");
+  topicInput.type = "text";
+  topicInput.dataset.field = "topic";
+  topicInput.value = draft?.topic ?? "";
+  topicInput.placeholder = "Topic";
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "ghost small task-remove";
+  removeButton.setAttribute("aria-label", "Remove task");
+  removeButton.textContent = "Remove";
+
+  row.append(subjectInput, titleInput, dueDateInput, minutesInput, taskTypeSelect, topicInput, removeButton);
+
   removeButton.addEventListener("click", () => {
     row.remove();
     if (taskList.children.length === 0) {
@@ -507,19 +551,32 @@ function updateHomeWidgets(response: StudyPlanResponse): void {
   widgetWeek.textContent = `${response.week_start_date} -> ${response.week_end_date}`;
 
   const topSessions = response.schedule.slice(0, 4);
-  homePreviewList.innerHTML = topSessions.length
-    ? topSessions
-        .map(
-          (session) => `
-            <article class="preview-item">
-              <h4>${session.subject}</h4>
-              <p>${session.day} | ${session.topic}</p>
-              <strong>${session.minutes}m</strong>
-            </article>
-          `,
-        )
-        .join("")
-    : '<p class="muted-empty">No sessions generated yet.</p>';
+  homePreviewList.textContent = "";
+
+  if (topSessions.length === 0) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "muted-empty";
+    emptyState.textContent = "No sessions generated yet.";
+    homePreviewList.appendChild(emptyState);
+    return;
+  }
+
+  for (const session of topSessions) {
+    const previewItem = document.createElement("article");
+    previewItem.className = "preview-item";
+
+    const title = document.createElement("h4");
+    title.textContent = session.subject;
+
+    const detail = document.createElement("p");
+    detail.textContent = `${session.day} | ${session.topic}`;
+
+    const minutes = document.createElement("strong");
+    minutes.textContent = `${session.minutes}m`;
+
+    previewItem.append(title, detail, minutes);
+    homePreviewList.appendChild(previewItem);
+  }
 }
 
 function renderPlan(response: StudyPlanResponse): void {
@@ -564,35 +621,48 @@ function renderPlan(response: StudyPlanResponse): void {
     const dayCard = document.createElement("article");
     dayCard.className = "day-card";
 
-    dayCard.innerHTML = `
-      <header class="day-card-header">
-        <div>
-          <p>${entries[0]?.day ?? "Day"}</p>
-          <h3>${date}</h3>
-        </div>
-        <strong>${entries.reduce((sum, item) => sum + item.minutes, 0)} min</strong>
-      </header>
-      <div class="session-list"></div>
-    `;
+    const header = document.createElement("header");
+    header.className = "day-card-header";
 
-    const list = dayCard.querySelector(".session-list") as HTMLDivElement;
+    const headerMeta = document.createElement("div");
+    const dayName = document.createElement("p");
+    dayName.textContent = entries[0]?.day ?? "Day";
+    const dateHeading = document.createElement("h3");
+    dateHeading.textContent = date;
+    headerMeta.append(dayName, dateHeading);
+
+    const totalMinutes = document.createElement("strong");
+    totalMinutes.textContent = `${entries.reduce((sum, item) => sum + item.minutes, 0)} min`;
+    header.append(headerMeta, totalMinutes);
+
+    const list = document.createElement("div");
+    list.className = "session-list";
 
     for (const item of entries) {
       const row = document.createElement("div");
       row.className = "session-item";
-      row.innerHTML = `
-        <div>
-          <h4>${item.subject}</h4>
-          <p>${item.topic}</p>
-        </div>
-        <div class="session-meta">
-          <span class="activity ${item.activity_type}">${activityLabel(item.activity_type)}</span>
-          <strong>${item.minutes}m</strong>
-        </div>
-      `;
+
+      const details = document.createElement("div");
+      const subject = document.createElement("h4");
+      subject.textContent = item.subject;
+      const topic = document.createElement("p");
+      topic.textContent = item.topic;
+      details.append(subject, topic);
+
+      const meta = document.createElement("div");
+      meta.className = "session-meta";
+      const activity = document.createElement("span");
+      activity.classList.add("activity", item.activity_type);
+      activity.textContent = activityLabel(item.activity_type);
+      const minutes = document.createElement("strong");
+      minutes.textContent = `${item.minutes}m`;
+      meta.append(activity, minutes);
+
+      row.append(details, meta);
       list.appendChild(row);
     }
 
+    dayCard.append(header, list);
     scheduleGrid.appendChild(dayCard);
   }
 
@@ -601,9 +671,13 @@ function renderPlan(response: StudyPlanResponse): void {
 
   summaryTotal.textContent = `${filteredTotalMinutes} min`;
   summaryReviews.textContent = String(filteredReviews);
-  heuristicsBox.innerHTML = response.summary.heuristics_used
-    .map((heuristic) => `<span class="heuristic-pill">${heuristic}</span>`)
-    .join("");
+  heuristicsBox.textContent = "";
+  for (const heuristic of response.summary.heuristics_used) {
+    const pill = document.createElement("span");
+    pill.className = "heuristic-pill";
+    pill.textContent = heuristic;
+    heuristicsBox.appendChild(pill);
+  }
 
   const hasTagFilter = selectedSubjectFilters.size > 0 || selectedActivityFilters.size > 0;
 
