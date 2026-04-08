@@ -245,8 +245,11 @@ function getApiBaseUrl(): string {
   return "";
 }
 
-function normalizeImportance(value: number): number {
-  return Math.min(5, Math.max(1, Math.round(value)));
+function normalizeImportance(value: number, line: string): number {
+  if (!Number.isInteger(value) || value < 1 || value > 5) {
+    throw new Error(`Invalid importance in subject row: ${line}. Use an integer from 1 to 5.`);
+  }
+  return value;
 }
 
 function parseSubjects(raw: string): SubjectInput[] {
@@ -260,7 +263,7 @@ function parseSubjects(raw: string): SubjectInput[] {
       if (!name || !Number.isFinite(importance)) {
         throw new Error(`Invalid subject row: ${line}`);
       }
-      return { name, importance: normalizeImportance(importance) };
+      return { name, importance: normalizeImportance(importance, line) };
     });
 }
 
@@ -352,9 +355,27 @@ function parseTasksFromEditor(): StudyTaskInput[] {
     const taskType = (row.querySelector('[data-field="taskType"]') as HTMLSelectElement).value as TaskType;
     const topic = (row.querySelector('[data-field="topic"]') as HTMLInputElement).value.trim();
     const estimated_total_minutes = Number(minutesText);
+    const dueDateTime = Date.parse(`${dueDate}T00:00:00`);
+    const validTaskTypes: TaskType[] = ["exam", "assignment", "project", "quiz"];
 
     if (!subject || !title || !dueDate || !Number.isFinite(estimated_total_minutes)) {
       throw new Error(`Task ${rowIndex + 1} is incomplete.`);
+    }
+
+    if (Number.isNaN(dueDateTime)) {
+      throw new Error(`Task ${rowIndex + 1} has an invalid due date.`);
+    }
+
+    if (!Number.isInteger(estimated_total_minutes)) {
+      throw new Error(`Task ${rowIndex + 1} minutes must be a whole number.`);
+    }
+
+    if (estimated_total_minutes < 30) {
+      throw new Error(`Task ${rowIndex + 1} minutes must be at least 30.`);
+    }
+
+    if (!validTaskTypes.includes(taskType)) {
+      throw new Error(`Task ${rowIndex + 1} has an invalid task type.`);
     }
 
     return {
@@ -378,6 +399,97 @@ function collectDailyHours(): DailyHours {
     saturday: Number((document.getElementById("hours_saturday") as HTMLInputElement).value),
     sunday: Number((document.getElementById("hours_sunday") as HTMLInputElement).value),
   };
+}
+
+function validateDailyHours(dailyHours: DailyHours): void {
+  const entries = Object.entries(dailyHours) as Array<[keyof DailyHours, number]>;
+  for (const [day, value] of entries) {
+    if (!Number.isFinite(value) || value < 0 || value > 24) {
+      throw new Error(`Daily hours for ${day} must be between 0 and 24.`);
+    }
+  }
+
+  const totalHours = entries.reduce((sum, [, value]) => sum + value, 0);
+  if (totalHours <= 0) {
+    throw new Error("Please set at least one day with available study hours.");
+  }
+}
+
+function validateTaskSubjectsExist(tasks: StudyTaskInput[], subjects: SubjectInput[]): void {
+  const subjectNames = new Set(subjects.map((subject) => subject.name.trim().toLowerCase()));
+  const unknownSubjects = Array.from(
+    new Set(
+      tasks
+        .map((task) => task.subject)
+        .filter((subject) => !subjectNames.has(subject.trim().toLowerCase())),
+    ),
+  );
+
+  if (unknownSubjects.length > 0) {
+    throw new Error(
+      `Task subjects must match your Subjects list. Unknown: ${unknownSubjects.join(", ")}.`,
+    );
+  }
+}
+
+type FastApiValidationIssue = {
+  loc?: Array<string | number>;
+  msg?: string;
+};
+
+function prettifyFieldPath(loc: Array<string | number>): string {
+  const cleaned = loc.filter((part) => part !== "body");
+  if (cleaned.length === 0) {
+    return "request";
+  }
+
+  if (cleaned[0] === "tasks" && typeof cleaned[1] === "number") {
+    const label = typeof cleaned[2] === "string" ? cleaned[2].replace(/_/g, " ") : "field";
+    return `Task ${cleaned[1] + 1} ${label}`;
+  }
+
+  if (cleaned[0] === "subjects" && typeof cleaned[1] === "number") {
+    const label = typeof cleaned[2] === "string" ? cleaned[2].replace(/_/g, " ") : "field";
+    return `Subject ${cleaned[1] + 1} ${label}`;
+  }
+
+  if (cleaned[0] === "daily_hours" && typeof cleaned[1] === "string") {
+    return `Daily hours (${cleaned[1]})`;
+  }
+
+  return cleaned.map((part) => String(part).replace(/_/g, " ")).join(" ");
+}
+
+function friendlyApiErrorMessage(status: number, errorText: string): string {
+  if (status === 422) {
+    try {
+      const parsed = JSON.parse(errorText) as { detail?: string | FastApiValidationIssue[] };
+      const detail = parsed.detail;
+
+      if (typeof detail === "string" && detail.trim().length > 0) {
+        return detail;
+      }
+
+      if (Array.isArray(detail) && detail.length > 0) {
+        const messages = detail.slice(0, 3).map((issue) => {
+          const field = Array.isArray(issue.loc) ? prettifyFieldPath(issue.loc) : "request";
+          const reason = typeof issue.msg === "string" ? issue.msg : "Invalid value";
+          return `${field}: ${reason}`;
+        });
+        return `Please check your input: ${messages.join(" | ")}`;
+      }
+    } catch {
+      return "Please check your input and try again.";
+    }
+
+    return "Please check your input and try again.";
+  }
+
+  if (status >= 500) {
+    return "The server encountered an error. Please try again shortly.";
+  }
+
+  return `Request failed (${status}). Please try again.`;
 }
 
 function activityLabel(activityType: ActivityType): string {
@@ -733,14 +845,28 @@ async function requestPlan(): Promise<void> {
       throw new Error("Please choose a week start date.");
     }
 
+    if (!Number.isInteger(maxSessionMinutes) || maxSessionMinutes < 30 || maxSessionMinutes > 180) {
+      throw new Error("Max session minutes must be a whole number between 30 and 180.");
+    }
+
+    const dailyHours = collectDailyHours();
+    validateDailyHours(dailyHours);
+    const subjects = parseSubjects((document.getElementById("subjects") as HTMLTextAreaElement).value);
+    if (subjects.length === 0) {
+      throw new Error("Please add at least one subject.");
+    }
+
+    const tasks = parseTasksFromEditor();
+    validateTaskSubjectsExist(tasks, subjects);
+
     const payload: StudyPlanRequest = {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
       week_start_date: weekStartInput.value,
-      daily_hours: collectDailyHours(),
-      subjects: parseSubjects((document.getElementById("subjects") as HTMLTextAreaElement).value),
-      tasks: parseTasksFromEditor(),
+      daily_hours: dailyHours,
+      subjects,
+      tasks,
       study_style: studyStyle,
-      max_session_minutes: Number.isFinite(maxSessionMinutes) ? maxSessionMinutes : 90,
+      max_session_minutes: maxSessionMinutes,
     };
 
     const response = await fetch(`${getApiBaseUrl()}/api/plan`, {
@@ -753,7 +879,7 @@ async function requestPlan(): Promise<void> {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Backend error: ${response.status} ${errorText}`);
+      throw new Error(friendlyApiErrorMessage(response.status, errorText));
     }
 
     selectedDateFilter = null;
@@ -764,7 +890,11 @@ async function requestPlan(): Promise<void> {
     selectedDateFilter = null;
     scheduleGrid.innerHTML = "";
     renderMiniCalendar(weekStartInput.value, new Set(), new Map(), null);
-    statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
+    if (error instanceof TypeError) {
+      statusBox.textContent = "Could not reach the backend. Please ensure the API server is running.";
+    } else {
+      statusBox.textContent = error instanceof Error ? error.message : "Unknown error";
+    }
   } finally {
     isGeneratingPlan = false;
     weekPrevButton.disabled = false;
