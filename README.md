@@ -31,6 +31,8 @@ User ↔️ Frontend (Vite/TS) ↔️ FastAPI Backend ↔️ Scheduling Logic
 - Input subjects, deadlines, available daily study hours, and study style
 - Rule-based + heuristic scheduling (urgency, importance, chunking, spaced review)
 - Structured weekly plan output: day, subject, topic, minutes, activity type
+- Overdue spillovers are explicitly flagged in session notes when only post-deadline slots are available
+- Strong client-side validation with friendlier API error messages in the frontend
 
 ---
 
@@ -56,8 +58,12 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+# Optional: override allowed CORS origins (comma-separated)
+# set CORS_ALLOW_ORIGINS=http://127.0.0.1:5173,http://localhost:5173
 uvicorn app.main:app --reload --port 8000
 ```
+
+If `CORS_ALLOW_ORIGINS` contains `*`, credentials are automatically disabled for safe CORS behavior.
 
 API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
@@ -89,6 +95,11 @@ Open the app URL printed by Vite (usually [http://127.0.0.1:5173](http://127.0.0
 
 - **Request:** Follows `backend/schemas/input.schema.json`
 - **Response:** Follows `backend/schemas/output.schema.json`
+
+Response `schedule[].notes` values include:
+- `Core task block`
+- `Spaced repetition review`
+- `Overdue spillover (scheduled after due date due to limited pre-deadline capacity)`
 
 **Example request:**
 
