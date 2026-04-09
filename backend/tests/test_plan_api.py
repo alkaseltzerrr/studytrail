@@ -70,6 +70,10 @@ def load_output_schema() -> dict[str, Any]:
 
 def test_create_plan_happy_path(valid_payload: dict[str, Any]) -> None:
     payload = clone_payload(valid_payload)
+    # Keep this test stable regardless of today's date.
+    payload["week_start_date"] = "2099-01-05"
+    payload["tasks"][0]["due_date"] = "2099-01-09"
+    payload["tasks"][1]["due_date"] = "2099-01-10"
 
     response = client.post("/api/plan", json=payload)
 
